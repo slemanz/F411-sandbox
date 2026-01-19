@@ -1,0 +1,6 @@
+#ifndef INC_INTERFACE_DEFINES_H_
+#define INC_INTERFACE_DEFINES_H_
+
+
+
+#endif /* INC_INTERFACE_DEFINES_H_ */
