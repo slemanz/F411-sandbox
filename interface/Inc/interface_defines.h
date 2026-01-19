@@ -1,5 +1,5 @@
-#ifndef INC_INTERFACE_INSTANCES_H_
-#define INC_INTERFACE_INSTANCES_H_
+#ifndef INC_INTERFACE_DEFINES_H_
+#define INC_INTERFACE_DEFINES_H_
 
 /************************************************************
 *                   COMM INSTANCES                          *
@@ -16,4 +16,4 @@
 #define INTERFACE_IO_2          2
 
 
-#endif /* INC_INTERFACE_INSTANCES_H_ */
+#endif /* INC_INTERFACE_DEFINES_H_ */
