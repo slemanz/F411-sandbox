@@ -7,7 +7,7 @@
 *                   COMM INSTANCES                          *
 *************************************************************/
 
-extern const Comm_Interface_t sci2_protocol;
+extern const Comm_Interface_t uart2_protocol;
 
 
 /************************************************************
