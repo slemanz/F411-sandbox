@@ -10,9 +10,7 @@ int main(void)
     config_app();
 
     simple_timer_t timer_blinky;
-    simple_timer_t timer_ch;
     simple_timer_setup(&timer_blinky, 500, true);
-    simple_timer_setup(&timer_ch, 1000, true);
 
     uprint("Init the board!\r\n");
     

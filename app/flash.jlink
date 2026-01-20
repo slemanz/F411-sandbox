@@ -1,10 +1,10 @@
-device R7FA4M1AB
+device STM32F411RE
 si swd
 speed 4000
 
 r
 h
-loadbin Build/flash.bin 0x00000000
+loadbin Build/flash.bin 0x08000000
 r
 g
 

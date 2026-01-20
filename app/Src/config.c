@@ -13,20 +13,6 @@
 #include "interface/interface.h"
 #include "interface_defines.h"
 
-Comm_Interface_t *serial = NULL;
-
-void config_interface(void)
-{
-    serial = Comm_ProtocolGet(INTERFACE_PROTOCOL_SCI2);
-}
-
-// printf retarget
-extern int __io_putchar(int ch)
-{
-    if(serial != NULL) serial->send((uint8_t*)&ch, 1);
-    return ch;
-}
-
 /************************************************************
 *                         CORE                              *
 *************************************************************/
@@ -40,8 +26,8 @@ const command_t commands_table[] = {
 
 void config_core(void)
 {
-    uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_SCI2));
-    cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_SCI2), (command_t*)commands_table, 1);
+    uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2));
+    cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, 1);
 }
 
 /************************************************************
@@ -52,9 +38,6 @@ void config_core(void)
 
 void config_app(void)
 {
-    clock_init();
-
-    config_interface();
     config_core();
-    led_setup(IO_Interface_get(INTERFACE_IO_1));
+    led_setup(IO_Interface_get(INTERFACE_IO_0));
 }

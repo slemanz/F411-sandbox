@@ -7,7 +7,7 @@ FLOAT=-mfloat-abi=soft
 BUILD_DIR = Build
 ROOT_DIR = ..
 
-LINKER= -T $(ROOT_DIR)/linkers/R7FA4M1AB.ld
+LINKER= -T $(ROOT_DIR)/linkers/STM32F411.ld
 MAP_FILE= -Wl,-Map=$(BUILD_DIR)/$(TARGET).map
 
 CFLAGS= -c $(MACH) -mthumb $(FLOAT) -std=gnu99 -Wall -O0 -g \
@@ -40,11 +40,11 @@ OBJS		+= $(BUILD_DIR)/startup.o
 DRIVERS		+= $(BUILD_DIR)/driver_clock.o
 DRIVERS		+= $(BUILD_DIR)/driver_systick.o
 DRIVERS		+= $(BUILD_DIR)/driver_gpio.o
-DRIVERS		+= $(BUILD_DIR)/driver_sci.o
+DRIVERS		+= $(BUILD_DIR)/driver_uart.o
 DRIVERS		+= $(BUILD_DIR)/driver_interrupt.o
 
 INTERFACE	+= $(BUILD_DIR)/interface_comm.o
-INTERFACE	+= $(BUILD_DIR)/protocol_sci.o
+INTERFACE	+= $(BUILD_DIR)/protocol_uart.o
 INTERFACE	+= $(BUILD_DIR)/interface_timebase.o
 INTERFACE	+= $(BUILD_DIR)/interface_io.o
 
