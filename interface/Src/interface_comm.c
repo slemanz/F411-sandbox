@@ -7,7 +7,7 @@ Comm_Interface_t *Comm_ProtocolGet(uint8_t type)
 {
     switch (type)
     {
-        case INTERFACE_PROTOCOL_UART2: return (Comm_Interface_t*)&sci2_protocol;
+        case INTERFACE_PROTOCOL_UART2: return (Comm_Interface_t*)&uart2_protocol;
         default: return NULL;
     }
 }
