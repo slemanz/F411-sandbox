@@ -22,5 +22,10 @@ typedef struct
     MemBlock_t *freelist; // Linked list of free block
 }MemPool_t;
 
+void MemoryPool_Init(void);
+void *MemoryPool_Allocate(void);
+void MemoryPool_free(void *ptr);
+uint32_t MemoryPool_GetFreeBlockCount(void);
+
 
 #endif /* INC_POOL_H_ */
