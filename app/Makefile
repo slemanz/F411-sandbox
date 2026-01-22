@@ -55,6 +55,7 @@ CORE		+= $(BUILD_DIR)/uprint.o
 BSP			+= $(BUILD_DIR)/led.o
 
 SHARED		+= $(BUILD_DIR)/ring-buffer.o
+SHARED		+= $(BUILD_DIR)/pool.o
 
 PREREQ = $(BUILD_DIR)/
 
