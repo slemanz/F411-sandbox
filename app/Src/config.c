@@ -20,6 +20,8 @@
 #include "core/cli.h"
 #include "core/simple-timer.h"
 
+#include "shared/pool.h"
+
 const command_t commands_table[] = {
     {"help", cli_help, "List all commands."},
 };
@@ -28,6 +30,8 @@ void config_core(void)
 {
     uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2));
     cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, 1);
+
+    pool_Init();
 }
 
 /************************************************************
@@ -39,5 +43,4 @@ void config_core(void)
 void config_app(void)
 {
     config_core();
-    led_setup(IO_Interface_get(INTERFACE_IO_0));
 }

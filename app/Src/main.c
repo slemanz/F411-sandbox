@@ -1,4 +1,5 @@
 #include "config.h"
+#include "interface_defines.h"
 
 #include "bsp/led.h"
 #include "core/simple-timer.h"
@@ -15,20 +16,19 @@ int main(void)
 
     uprint("Init the board!\r\n");
 
-    pool_Init();
-    uprint("Mem Pool used: %d\r\n", pool_GetFreeBlockCount());
+    ledPtr_t led1 = led_create("Led 1", IO_Interface_get(INTERFACE_IO_0));
+    ledPtr_t led2 = led_create("Led 2", IO_Interface_get(INTERFACE_IO_1));
+    led_turn_on(led1);
 
-    int *var_test = pool_Allocate();
-    *var_test = 12;
-    uprint("teste: %d\r\n", *var_test);
-    uprint("Mem Pool used: %d\r\n", pool_GetFreeBlockCount());
-    pool_free(var_test);
+    led_displayInfo(led1);
+    led_displayInfo(led2);
     
     while(1)
     {
         if(simple_timer_has_elapsed(&timer_blinky))
         {
-            led_toggle();
+            led_toggle(led1);
+            led_toggle(led2);
         }
 
         cli_update();
