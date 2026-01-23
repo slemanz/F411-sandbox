@@ -73,7 +73,22 @@ void led_displayAll(void)
 
 static void ledList_insert(ledPtr_t led)
 {
+    if(led_header == NULL)
+    {
+        led_header = led;
+        led->next = NULL;
+    }else
+    {
+        ledPtr_t current = led_header;
 
+        while(current->next != NULL)
+        {
+            current = current->next;
+        }
+
+        current->next = led;
+        led->next = NULL;
+    }
 }
 
 static void ledList_delete(ledPtr_t led)
