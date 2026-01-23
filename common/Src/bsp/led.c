@@ -15,9 +15,10 @@ ledPtr_t led_create(const char *name, IO_Interface_t *io_pin)
     {
         led->name = name;
         led->pin = io_pin;
+        uprint("*** %s created ***\r\n", led->name);
     }else
     {
-        uprint("Low memory, cannot create device\n");
+        uprint("Low memory, cannot create device\r\n");
     }
 
     return led;
@@ -40,11 +41,13 @@ void led_toggle(ledPtr_t led)
 
 void led_destroy(ledPtr_t led)
 {
-    uprint("*** %s destroyed***\n\r", led->name);
+    uprint("*** %s destroyed***\r\n", led->name);
     pool_free(led);
 }
 
 void led_displayInfo(ledPtr_t led)
 {
-
+    uprint("************************************************************\r\n");
+    uprint("Device name: %s\r\n", led->name);
+    uprint("************************************************************\r\n");
 }
