@@ -14,6 +14,7 @@ void led_toggle(ledPtr_t led);
 
 void led_destroy(ledPtr_t led);
 void led_displayInfo(ledPtr_t led);
+void led_displayAll(void);
 
 
 #endif /* INC_LED_H_ */
