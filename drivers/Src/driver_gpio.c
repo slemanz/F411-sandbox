@@ -56,7 +56,36 @@ void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 
 	uint32_t temp = 0; // temporary register
 
-	// 1. configure the mode of the gpio pin
+	// 1. configure the alt functionality
+	if(pGPIOConfig->GPIO_PinMode == GPIO_MODE_ALTFN)
+	{
+		uint32_t temp1, temp2;
+
+		temp1 = pGPIOConfig->GPIO_PinNumber / 8;
+		temp2 = pGPIOConfig->GPIO_PinNumber % 8;
+		pGPIOConfig->pGPIOx->AFR[temp1] &= ~(0x0F << (4*temp2));
+		pGPIOConfig->pGPIOx->AFR[temp1] |= (pGPIOConfig->GPIO_PinAltFunMode << (4*temp2));
+	}
+
+	// 2. configure the pupd settings
+	temp = (pGPIOConfig->GPIO_PinPuPdControl << (2 * pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->PUPDR &= ~(0x3 << (2 * pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->PUPDR |= temp;
+	temp = 0;
+
+	// 3. configure the speed
+	temp = (pGPIOConfig->GPIO_PinSpeed << (2 * pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->OSPEEDR &= ~(0x3 << (2 * pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->OSPEEDR |= temp;
+	temp = 0;
+
+	// 4. configure the output type
+	temp = (pGPIOConfig->GPIO_PinOPType  << (pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->OTYPER &= ~(0x1 << (pGPIOConfig->GPIO_PinNumber));
+	pGPIOConfig->pGPIOx->OTYPER |= temp;
+	temp = 0;
+
+	// 5. configure the mode of the gpio pin
 	
 	if(pGPIOConfig->GPIO_PinMode <= GPIO_MODE_ANALOG)
 	{
@@ -99,40 +128,6 @@ void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 
 		// 3. enable the exti interrupt delivery using IMR
 		EXTI->IMR |= (1 << pGPIOConfig->GPIO_PinNumber);
-	}
-
-	temp = 0;
-
-	// 2. configure the speed
-	temp = (pGPIOConfig->GPIO_PinSpeed << (2 * pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->OSPEEDR &= ~(0x3 << (2 * pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->OSPEEDR |= temp;
-	temp = 0;
-
-
-	// 3. configure the pupd settings
-	temp = (pGPIOConfig->GPIO_PinPuPdControl << (2 * pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->PUPDR &= ~(0x3 << (2 * pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->PUPDR |= temp;
-	temp = 0;
-
-
-	// 4. configure the output type
-	temp = (pGPIOConfig->GPIO_PinOPType  << (pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->OTYPER &= ~(0x1 << (pGPIOConfig->GPIO_PinNumber));
-	pGPIOConfig->pGPIOx->OTYPER |= temp;
-	temp = 0;
-
-
-	// 5. configure the alt functionality
-	if(pGPIOConfig->GPIO_PinMode == GPIO_MODE_ALTFN)
-	{
-		uint32_t temp1, temp2;
-
-		temp1 = pGPIOConfig->GPIO_PinNumber / 8;
-		temp2 = pGPIOConfig->GPIO_PinNumber % 8;
-		pGPIOConfig->pGPIOx->AFR[temp1] &= ~(0x0F << (4*temp2));
-		pGPIOConfig->pGPIOx->AFR[temp1] |= (pGPIOConfig->GPIO_PinAltFunMode << (4*temp2));
 	}
 }
 
