@@ -24,8 +24,9 @@ ledPtr_t led_create(const char *name, IO_Interface_t *io_pin)
         led->name = name;
         led->pin = io_pin;
         led->uuid = ++uuid_count;
+        led->next = NULL;
         
-        if(led_header == NULL)
+        ledList_insert(led);
 
         uprint("*** %s created ***\r\n", led->name);
     }else
@@ -54,6 +55,7 @@ void led_toggle(ledPtr_t led)
 void led_destroy(ledPtr_t led)
 {
     uprint("*** %s destroyed***\r\n", led->name);
+    ledList_delete(led);
     pool_free(led);
 }
 
@@ -66,8 +68,13 @@ void led_displayInfo(ledPtr_t led)
 
 void led_displayAll(void)
 {
+    ledPtr_t current = led_header;
     uprint("************************************************************\r\n");
-    //uprint("Device name: %s\r\n", led->name);
+    while(current != NULL)
+    {
+        uprint("Device name: %s (UUID: %d)\r\n", current->name, current->uuid);
+        current = current->next;
+    }
     uprint("************************************************************\r\n");
 }
 
@@ -93,5 +100,24 @@ static void ledList_insert(ledPtr_t led)
 
 static void ledList_delete(ledPtr_t led)
 {
+    ledPtr_t current = led_header;
+    ledPtr_t previous = NULL;
 
+    while(current != NULL)
+    {
+        if(current == led)
+        {
+            if(previous == NULL)
+            {
+                led_header = current->next;
+            }else
+            {
+                previous->next = current->next;
+            }
+            return;
+        }
+
+        previous = current;
+        current = current->next;
+    }
 }
