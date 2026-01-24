@@ -6,6 +6,7 @@ struct led_t{
     const char *name;
     IO_Interface_t *pin;
     uint32_t uuid;
+    bool inverted;
     ledPtr_t next;
 };
 
@@ -29,6 +30,7 @@ ledPtr_t led_create(const char *name, IO_Interface_t *io_pin)
     {
         led->name = name;
         led->pin = io_pin;
+        led->inverted = false;
         led->next = NULL;
 
         while(ledList_uuidExists(uuid_count) == true)
@@ -70,6 +72,7 @@ ledPtr_t led_createWithUuid(const char *name, IO_Interface_t *io_pin, uint32_t u
         led->name = name;
         led->pin = io_pin;
         led->uuid = uuid;
+        led->inverted = false;
         led->next = NULL;
 
         ledList_insert(led);
@@ -105,12 +108,22 @@ ledPtr_t led_getByUuid(uint32_t uuid)
 
 void led_turn_on(ledPtr_t led)
 {
-    led->pin->write(1);
+    uint8_t state = 1;
+    if(led->inverted)
+    {
+        state = 0;
+    }
+    led->pin->write(state);
 }
 
 void led_turn_off(ledPtr_t led)
 {
-    led->pin->write(0);
+    uint8_t state = 0;
+    if(led->inverted)
+    {
+        state = 1;
+    }
+    led->pin->write(state);
 }
 
 void led_toggle(ledPtr_t led)
@@ -118,6 +131,14 @@ void led_toggle(ledPtr_t led)
     led->pin->toggle();
 }
 
+void led_invertLogic(ledPtr_t led)
+{
+    if(led == NULL)
+    {
+        return;
+    }
+    led->inverted = true;
+}
 
 /************************************************************
 *                       DISPLAY                             *

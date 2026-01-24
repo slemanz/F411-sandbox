@@ -16,6 +16,8 @@ void led_turn_on(ledPtr_t led);
 void led_turn_off(ledPtr_t led);
 void led_toggle(ledPtr_t led);
 
+void led_invertLogic(ledPtr_t led);
+
 void led_displayInfo(ledPtr_t led);
 void led_displayAll(void);
 
