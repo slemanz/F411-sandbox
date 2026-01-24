@@ -18,8 +18,6 @@ int main(void)
     ledPtr_t led1 = led_getByUuid(1);
     ledPtr_t led2 = led_getByUuid(2);
 
-
-    led_turn_on(led1);
     while(1)
     {
         if(simple_timer_has_elapsed(&timer_blinky))

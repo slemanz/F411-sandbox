@@ -35,10 +35,18 @@ void config_core(void)
     cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, 1);
 
     // bsp
-    if(led_create("Led 1", IO_Interface_get(INTERFACE_IO_0)) == NULL) while(1);
-    if(led_create("Led 2", IO_Interface_get(INTERFACE_IO_1)) == NULL) while(1);
-    if(led_createWithUuid("Led Teste", IO_Interface_get(INTERFACE_IO_1), 12) == NULL) while(1);
+    ledPtr_t led = led_create("Led 1", IO_Interface_get(INTERFACE_IO_0));
+    if(led != NULL)
+    {
+        led_turn_off(led);
+    }
 
+    led = led_create("Led 2", IO_Interface_get(INTERFACE_IO_1));
+    if(led != NULL)
+    {
+        led_invertLogic(led);
+        led_turn_off(led);
+    }
 }
 
 /************************************************************
