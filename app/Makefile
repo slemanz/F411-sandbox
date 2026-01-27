@@ -17,6 +17,8 @@ LDFLAGS = $(MACH) -mthumb $(FLOAT) --specs=nosys.specs $(LINKER) $(MAP_FILE) -g 
 			-Wl,--gc-sections -static --specs=nano.specs -Wl,--start-group -lc -lm \
 			-Wl,--end-group -Wl,--print-memory-usage
 
+LDFLAGS += -Wl,--no-warn-rwx-segments
+
 OBJCOPY=arm-none-eabi-objcopy
 
 ###########################################

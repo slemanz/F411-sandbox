@@ -6,7 +6,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
     FLASH(rx): ORIGIN =0x08000000, LENGTH =512K
-    SRAM(rwx): ORIGIN =0x20000000, LENGTH =128K
+    SRAM(xrw): ORIGIN =0x20000000, LENGTH =128K
 }
 
 SECTIONS
@@ -33,7 +33,7 @@ SECTIONS
         _etext = .;       
     } > FLASH
     
-    .arrays (READONLY):
+    .init_array :
     {
         . = ALIGN(4);
         PROVIDE_HIDDEN (__preinit_array_start = .);
