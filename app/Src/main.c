@@ -17,11 +17,17 @@ void DS3231_ReadTime(void)
     writeBuffer[0] = 0xD0; // 0x68 << 1 | 0
     writeBuffer[1] = 0x00; 
     
-    I2C_MasterSendData(I2C1, writeBuffer, 2, I2C_ENABLE_SR);
+    I2C_GenereteStart(I2C1);
+    I2C_SendAddress(I2C1, 0x68, I2C_SEND_WRITE);
+    I2C_Send(I2C1, &writeBuffer[1], 1);
+    I2C_GenereteStop(I2C1);
+    I2C_WaitBusy(I2C1);
+    
+    //I2C_MasterSendData(I2C1, writeBuffer, 2, I2C_ENABLE_SR);
 
     readAddrBuffer[0] = 0xD1; // 0x68 << 1 | 1
-    I2C_MasterSendData(I2C1, readAddrBuffer, 1, I2C_ENABLE_SR);
-    I2C_MasterReceiveData(I2C1, rtcData, 3, I2C_DISABLE_SR);
+    //I2C_MasterSendData(I2C1, readAddrBuffer, 1, I2C_ENABLE_SR);
+    //I2C_MasterReceiveData(I2C1, rtcData, 3, I2C_DISABLE_SR);
 
     // rtcData agora contém os valores BCD de segundos, minutos e horas.
 }
