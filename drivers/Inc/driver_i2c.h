@@ -150,6 +150,9 @@ typedef struct
 #define I2C_DISABLE_SR 		DISABLE
 #define I2C_ENABLE_SR		ENABLE
 
+#define I2C_SEND_WRITE      0
+#define I2C_SEND_READ       1
+
 /********************************************************************************************
  * 								APIs supported by this driver
  * 					for more information check the function definitions
@@ -173,6 +176,14 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx);
  * Data send and receive
  */
 
+void I2C_GenereteStart(I2C_RegDef_t *pI2Cx);
+void I2C_GenereteStop(I2C_RegDef_t *pI2Cx);
+void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
+void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
+void I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType);
+
+void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len);
+
  /* Note: pTxbuffer[0] MUST contain the Slave Address */
 void I2C_MasterSendData(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len,  uint8_t Sr);
 void I2C_MasterReceiveData(I2C_RegDef_t *pI2Cx, uint8_t *pRxBuffer, uint8_t Len,  uint8_t Sr);
@@ -183,7 +194,6 @@ void I2C_MasterReceiveData(I2C_RegDef_t *pI2Cx, uint8_t *pRxBuffer, uint8_t Len,
 
 
 void I2C_PeripheralControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
-void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName);
 void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
 
