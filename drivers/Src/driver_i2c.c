@@ -1,8 +1,10 @@
 #include "driver_i2c.h"
 #include "driver_clock.h" 
+#include "driver_systick.h"
 
 uint16_t AHB_PreScaler[8] = {2, 4, 8, 16, 64, 128, 256, 512};
 uint16_t APB1_PreScaler[8] = {2, 4, 8, 16};
+
 
 /*********************************************************************
  * Private Helper Functions (Internal Use Only)
@@ -15,6 +17,40 @@ static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx)
     dummy_read = pI2Cx->SR1;
     dummy_read = pI2Cx->SR2;
     (void)dummy_read;
+}
+
+static I2C_Error_t I2C_CheckErrors(I2C_RegDef_t *pI2Cx)
+{
+    uint32_t sr1 = pI2Cx->SR1;
+    I2C_Error_t error = I2C_OK;
+
+    if ((sr1 & I2C_FLAG_BERR) != 0U)
+    {
+        error = I2C_ERROR_BERR;
+        pI2Cx->SR1 &= ~I2C_FLAG_BERR;  /* Clear flag */
+    }
+    else if ((sr1 & I2C_FLAG_ARLO) != 0U)
+    {
+        error = I2C_ERROR_ARLO;
+        pI2Cx->SR1 &= ~I2C_FLAG_ARLO;
+    }
+    else if ((sr1 & I2C_FLAG_AF) != 0U)
+    {
+        error = I2C_ERROR_AF;
+        pI2Cx->SR1 &= ~I2C_FLAG_AF;
+    }
+    else if ((sr1 & I2C_FLAG_OVR) != 0U)
+    {
+        error = I2C_ERROR_OVR;
+        pI2Cx->SR1 &= ~I2C_FLAG_OVR;
+    }
+    else if ((sr1 & I2C_FLAG_TIMEOUT) != 0U)
+    {
+        error = I2C_ERROR_TIMEOUT;
+        pI2Cx->SR1 &= ~I2C_FLAG_TIMEOUT;
+    }
+
+    return error;
 }
 
 /*********************************************************************
@@ -42,10 +78,10 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName)
     return FLAG_RESET;
 }
 
-void I2C_GenereteStart(I2C_RegDef_t *pI2Cx)
+I2C_Error_t I2C_GenereteStart(I2C_RegDef_t *pI2Cx)
 {
     pI2Cx->CR1 |= (1 << I2C_CR1_START);
-    while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_SB));
+    return I2C_WaitForFlag(pI2Cx, I2C_FLAG_SB, true, I2C_DEFAULT_TIMEOUT);
 }
 
 void I2C_GenereteStop(I2C_RegDef_t *pI2Cx)
@@ -56,6 +92,30 @@ void I2C_GenereteStop(I2C_RegDef_t *pI2Cx)
 void I2C_WaitBusy(I2C_RegDef_t *pI2Cx)
 {
     while((pI2Cx->SR2 & (1 << 1)));
+}
+
+
+I2C_Error_t I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs)
+{
+    ticks_timeout_t timeout;
+    ticks_timeoutInit(&timeout, I2C_DEFAULT_TIMEOUT);
+
+    while(((pI2Cx->SR1 & flag) != 0U) != status)
+    {
+        I2C_Error_t error = I2C_CheckErrors(pI2Cx);
+        if(error != I2C_OK)
+        {
+            return error;
+        }
+        
+        if(ticks_timeoutIsExpired(&timeout))
+        {
+            return I2C_ERROR_TIMEOUT;
+        }
+    }
+
+    return I2C_OK;
+
 }
 
 void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)

@@ -25,7 +25,7 @@ void systick_counter(uint8_t EnorDi);
 void systick_interrupt(uint8_t EnorDi);
 void systick_deinit(void);
 
-void ticks_timeoutInit(ticks_timeout_t *pTimeout, uint32_t timeout);
+void ticks_timeoutInit(ticks_timeout_t *pTimeout, uint32_t timeoutMs);
 bool ticks_timeoutIsExpired(const ticks_timeout_t *pTimeout);
 
 

@@ -84,10 +84,10 @@ void SysTick_Handler(void)
     ticks_increment();
 }
 
-void ticks_timeoutInit(ticks_timeout_t *pTimeout, uint32_t timeout)
+void ticks_timeoutInit(ticks_timeout_t *pTimeout, uint32_t timeoutMs)
 {
     pTimeout->start_tick = (uint32_t)ticks_get();
-    pTimeout->timeoutMs = timeout;
+    pTimeout->timeoutMs = timeoutMs;
 }
 
 bool ticks_timeoutIsExpired(const ticks_timeout_t *pTimeout)

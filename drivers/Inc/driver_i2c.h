@@ -12,6 +12,19 @@ typedef struct
 	uint32_t I2C_FMDutyCycle;
 }I2C_Config_t;
 
+typedef enum {
+    I2C_OK              = 0x00U,    /**< No error */
+    I2C_ERROR_TIMEOUT   = 0x01U,    /**< Timeout occurred */
+    I2C_ERROR_BERR      = 0x02U,    /**< Bus error */
+    I2C_ERROR_ARLO      = 0x04U,    /**< Arbitration lost */
+    I2C_ERROR_AF        = 0x08U,    /**< Acknowledge failure (NACK) */
+    I2C_ERROR_OVR       = 0x10U,    /**< Overrun/Underrun */
+    I2C_ERROR_INVALID   = 0x20U,    /**< Invalid parameter */
+    I2C_ERROR_BUSY      = 0x40U     /**< Bus is busy */
+} I2C_Error_t;
+
+#define I2C_DEFAULT_TIMEOUT         10
+
 /********************************************************************************
  * 	Bit position definition of I2C peripheral
  ********************************************************************************/
@@ -176,7 +189,8 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx);
  * Data send and receive
  */
 
-void I2C_GenereteStart(I2C_RegDef_t *pI2Cx);
+I2C_Error_t I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs);
+I2C_Error_t I2C_GenereteStart(I2C_RegDef_t *pI2Cx);
 void I2C_GenereteStop(I2C_RegDef_t *pI2Cx);
 void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
 void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
