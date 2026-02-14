@@ -8,12 +8,11 @@
 
 #include "driver_i2c.h"
 
+uint8_t writeBuffer[2];
+uint8_t rtcData[3]; // [0]=Seg, [1]=Min, [2]=Hor
+
 void DS3231_ReadTime(void)
 {
-    uint8_t writeBuffer[2];
-    uint8_t readAddrBuffer[1];
-    uint8_t rtcData[3]; // [0]=Seg, [1]=Min, [2]=Hor
-
     writeBuffer[0] = 0xD0; // 0x68 << 1 | 0
     writeBuffer[1] = 0x00; 
     
@@ -22,14 +21,11 @@ void DS3231_ReadTime(void)
     I2C_Send(I2C1, &writeBuffer[1], 1);
     I2C_GenereteStop(I2C1);
     I2C_WaitBusy(I2C1);
-    
-    //I2C_MasterSendData(I2C1, writeBuffer, 2, I2C_ENABLE_SR);
 
-    readAddrBuffer[0] = 0xD1; // 0x68 << 1 | 1
-    //I2C_MasterSendData(I2C1, readAddrBuffer, 1, I2C_ENABLE_SR);
-    //I2C_MasterReceiveData(I2C1, rtcData, 3, I2C_DISABLE_SR);
-
-    // rtcData agora contém os valores BCD de segundos, minutos e horas.
+    I2C_GenereteStart(I2C1);
+    I2C_SendAddress(I2C1, 0x68, I2C_SEND_READ);
+    I2C_Receive(I2C1, rtcData, 3);
+    I2C_GenereteStop(I2C1);
 }
 
 int main(void)
