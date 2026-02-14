@@ -23,6 +23,7 @@
 #include "shared/pool.h"
 
 #include "bsp/led.h"
+#include "bsp/rtc.h"
 
 #include "driver_gpio.h"
 #include "driver_i2c.h"
@@ -61,30 +62,5 @@ void config_core(void)
 void config_app(void)
 {
     config_core();
-
-    // pb6 - I2C1_SCL
-    // pb7 - I2C1_SDA
-    GPIO_PinConfig_t I2C_pin;
-    I2C_pin.pGPIOx = GPIOB;
-    I2C_pin.GPIO_PinOPType = GPIO_OP_TYPE_OD;
-    I2C_pin.GPIO_PinPuPdControl = GPIO_PIN_PU;
-    I2C_pin.GPIO_PinSpeed = GPIO_SPEED_HIGH;
-    I2C_pin.GPIO_PinMode = GPIO_MODE_ALTFN;
-    I2C_pin.GPIO_PinAltFunMode = GPIO_PIN_ALTFN_4;
-
-    I2C_pin.GPIO_PinNumber = GPIO_PIN_NO_6;
-    GPIO_Init(&I2C_pin);
-
-    I2C_pin.GPIO_PinNumber = GPIO_PIN_NO_7;
-    GPIO_Init(&I2C_pin);
-
-    I2C_Config_t I2C_config;
-    I2C_config.pI2Cx = I2C1;
-    I2C_config.I2C_DeviceAddress = 0x65;
-    I2C_config.I2C_SCLSpeed = I2C_SCL_SPEED_SM;
-    I2C_config.I2C_ACKControl = I2C_ACK_ENABLE;
-    I2C_Init(&I2C_config);
-
-    I2C_PeripheralControl(I2C1, ENABLE);
-    I2C_ManageAcking(I2C1, ENABLE);
+    rtc_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_I2C1));
 }

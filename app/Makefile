@@ -46,6 +46,7 @@ DRIVERS		+= $(BUILD_DIR)/driver_interrupt.o
 
 INTERFACE	+= $(BUILD_DIR)/interface_comm.o
 INTERFACE	+= $(BUILD_DIR)/protocol_uart.o
+INTERFACE	+= $(BUILD_DIR)/protocol_i2c.o
 INTERFACE	+= $(BUILD_DIR)/interface_timebase.o
 INTERFACE	+= $(BUILD_DIR)/interface_io.o
 
@@ -54,6 +55,7 @@ CORE		+= $(BUILD_DIR)/cli.o
 CORE		+= $(BUILD_DIR)/uprint.o
 
 BSP			+= $(BUILD_DIR)/led.o
+BSP			+= $(BUILD_DIR)/rtc.o
 
 SHARED		+= $(BUILD_DIR)/ring-buffer.o
 SHARED		+= $(BUILD_DIR)/pool.o

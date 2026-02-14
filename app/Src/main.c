@@ -1,39 +1,21 @@
 #include "config.h"
 
-#include "bsp/led.h"
 #include "core/simple-timer.h"
 #include "core/cli.h"
 #include "core/uprint.h"
-#include "shared/pool.h"
+#include "bsp/led.h"
+#include "bsp/rtc.h"
 
 #include "driver_i2c.h"
 
-uint8_t writeBuffer[2];
-uint8_t rtcData[3]; // [0]=Seg, [1]=Min, [2]=Hor
-
-void DS3231_ReadTime(void)
-{
-    writeBuffer[0] = 0xD0; // 0x68 << 1 | 0
-    writeBuffer[1] = 0x00; 
-    
-    I2C_GenereteStart(I2C1);
-    I2C_SendAddress(I2C1, 0x68, I2C_SEND_WRITE);
-    I2C_Send(I2C1, &writeBuffer[1], 1);
-    I2C_GenereteStop(I2C1);
-    I2C_WaitBusy(I2C1);
-
-    I2C_GenereteStart(I2C1);
-    I2C_SendAddress(I2C1, 0x68, I2C_SEND_READ);
-    I2C_Receive(I2C1, rtcData, 3);
-    I2C_GenereteStop(I2C1);
-}
+RTC_DateTime_t rtc;
 
 int main(void)
 {
     config_app();
 
     simple_timer_t timer_blinky;
-    simple_timer_setup(&timer_blinky, 500, true);
+    simple_timer_setup(&timer_blinky, 1000, true);
 
     uprint("Init the board!\r\n");
 
@@ -46,7 +28,10 @@ int main(void)
         {
             led_toggle(led1);
             led_toggle(led2);
-            DS3231_ReadTime();
+            rtc_get(&rtc);
+
+            uprint("%d/%d/%d - %d:%d:%d\r\n", rtc.date.date, rtc.date.month, rtc.date.year,
+                                              rtc.time.hours, rtc.time.minutes, rtc.time.seconds);
         }
 
         cli_update();
