@@ -8,6 +8,7 @@
 *************************************************************/
 
 extern const Comm_Interface_t uart2_protocol;
+extern const Comm_Interface_t i2c1_protocol;
 
 
 /************************************************************
