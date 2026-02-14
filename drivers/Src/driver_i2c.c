@@ -115,7 +115,6 @@ I2C_Error_t I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uin
     }
 
     return I2C_OK;
-
 }
 
 void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
@@ -237,18 +236,6 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx)
  * Data send and receive
  */
 
-void I2C_MasterSendData(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len, uint8_t Sr)
-{
-    if(Sr == I2C_DISABLE_SR)
-    {
-        I2C_GenerateStopCondition(pI2Cx);
-    }
-}
-
-void I2C_MasterReceiveData(I2C_RegDef_t *pI2Cx, uint8_t *pRxBuffer, uint8_t Len, uint8_t Sr)
-{
-}
-
 
 void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len)
 {
@@ -258,4 +245,20 @@ void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len)
         while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_TXE));
     }
     while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_BTF));
+}
+
+void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len)
+{
+    I2C_ManageAcking(pI2Cx, ENABLE);
+
+    for(uint32_t i = 0; i < Len; i++)
+    {
+        if(i == Len -1) // send nack
+        {
+            I2C_ManageAcking(pI2Cx, DISABLE);
+        }
+
+        while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_RXNE));
+        pRxbuffer[i] = pI2Cx->DR;
+    }
 }

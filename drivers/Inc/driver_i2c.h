@@ -197,6 +197,7 @@ void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
 void I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType);
 
 void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len);
+void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len);
 
  /* Note: pTxbuffer[0] MUST contain the Slave Address */
 void I2C_MasterSendData(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len,  uint8_t Sr);
