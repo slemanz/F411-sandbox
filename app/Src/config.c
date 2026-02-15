@@ -42,13 +42,19 @@ void config_core(void)
     ledPtr_t led = led_create("Led 1", IO_Interface_get(INTERFACE_IO_0));
     if(led != NULL)
     {
+        led_invertLogic(led);
         led_turn_off(led);
     }
 
     led = led_create("Led 2", IO_Interface_get(INTERFACE_IO_1));
     if(led != NULL)
     {
-        led_invertLogic(led);
+        led_turn_off(led);
+    }
+
+    led = led_create("Led 3", IO_Interface_get(INTERFACE_IO_2));
+    if(led != NULL)
+    {
         led_turn_off(led);
     }
 }
