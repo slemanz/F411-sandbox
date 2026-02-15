@@ -9,6 +9,9 @@
 
 #define IO0_INIT_MASK           (1U << 0)
 #define IO1_INIT_MASK           (1U << 1)
+#define IO2_INIT_MASK           (1U << 2)
+#define IO3_INIT_MASK           (1U << 3)
+#define IO4_INIT_MASK           (1U << 4)
 
 static uint32_t port_is_init_var = 0;
 
@@ -45,7 +48,6 @@ static void io0_write(uint8_t value)
 static uint8_t io0_read(void)
 {
     if(!port_is_init(IO0_INIT_MASK)) io0_init();
-    return 0;
     return GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NO_13);
 }
 
@@ -83,7 +85,6 @@ static void io1_write(uint8_t value)
 static uint8_t io1_read(void)
 {
     if(!port_is_init(IO1_INIT_MASK)) io1_init();
-    return 0;
     return GPIO_ReadFromInputPin(GPIOA, GPIO_PIN_NO_5);
 }
 
@@ -91,6 +92,43 @@ static void io1_toggle(void)
 {
     if(!port_is_init(IO1_INIT_MASK)) io1_init();
     GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NO_5);
+}
+
+/************************************************************
+*                         IO2                               *
+*************************************************************/
+
+static void io2_init(void)
+{
+    GPIO_PinConfig_t io_config;
+    io_config.pGPIOx = GPIOB;
+    io_config.GPIO_PinNumber = GPIO_PIN_NO_3;
+    io_config.GPIO_PinMode = GPIO_MODE_OUT;
+    io_config.GPIO_PinSpeed = GPIO_SPEED_LOW;
+    io_config.GPIO_PinOPType = GPIO_OP_TYPE_PP;
+    io_config.GPIO_PinPuPdControl = GPIO_NO_PUPD;
+    io_config.GPIO_PinAltFunMode = GPIO_PIN_ALTFN_0;
+    GPIO_Init(&io_config);
+
+    port_is_init_var |= IO2_INIT_MASK;
+}
+
+static void io2_write(uint8_t value)
+{
+    if(!port_is_init(IO2_INIT_MASK)) io2_init();
+    GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_3, value);
+}
+
+static uint8_t io2_read(void)
+{
+    if(!port_is_init(IO2_INIT_MASK)) io2_init();
+    return GPIO_ReadFromInputPin(GPIOB, GPIO_PIN_NO_3);
+}
+
+static void io2_toggle(void)
+{
+    if(!port_is_init(IO2_INIT_MASK)) io2_init();
+    GPIO_ToggleOutputPin(GPIOB, GPIO_PIN_NO_3);
 }
 
 /************************************************************
@@ -113,6 +151,14 @@ const IO_Interface_t io1_pin = {
     .deinit = NULL
 };
 
+const IO_Interface_t io2_pin = {
+    .init = io2_init,
+    .read = io2_read,
+    .write = io2_write,
+    .toggle = io2_toggle,
+    .deinit = NULL
+};
+
 /************************************************************
 *                       GET
 *************************************************************/
@@ -123,6 +169,9 @@ IO_Interface_t *IO_Interface_get(uint8_t pin)
     {
         case INTERFACE_IO_0: return (IO_Interface_t*)&io0_pin;
         case INTERFACE_IO_1: return (IO_Interface_t*)&io1_pin;
+        case INTERFACE_IO_2: return (IO_Interface_t*)&io2_pin;
+        case INTERFACE_IO_3: return (IO_Interface_t*)&io2_pin;
+        case INTERFACE_IO_4: return (IO_Interface_t*)&io2_pin;
         
         
         default:
