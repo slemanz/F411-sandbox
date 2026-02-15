@@ -19,10 +19,10 @@ static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx)
     (void)dummy_read;
 }
 
-static I2C_Error_t I2C_CheckErrors(I2C_RegDef_t *pI2Cx)
+static I2C_Error_e I2C_CheckErrors(I2C_RegDef_t *pI2Cx)
 {
     uint32_t sr1 = pI2Cx->SR1;
-    I2C_Error_t error = I2C_OK;
+    I2C_Error_e error = I2C_OK;
 
     if ((sr1 & I2C_FLAG_BERR) != 0U)
     {
@@ -78,7 +78,7 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName)
     return FLAG_RESET;
 }
 
-I2C_Error_t I2C_GenereteStart(I2C_RegDef_t *pI2Cx)
+I2C_Error_e I2C_GenereteStart(I2C_RegDef_t *pI2Cx)
 {
     pI2Cx->CR1 |= (1 << I2C_CR1_START);
     return I2C_WaitForFlag(pI2Cx, I2C_FLAG_SB, true, I2C_DEFAULT_TIMEOUT);
@@ -89,20 +89,42 @@ void I2C_GenereteStop(I2C_RegDef_t *pI2Cx)
     pI2Cx->CR1 |= (1 << I2C_CR1_STOP);
 }
 
-void I2C_WaitBusy(I2C_RegDef_t *pI2Cx)
+bool I2C_IsBusy(I2C_RegDef_t *pI2Cx)
 {
-    while((pI2Cx->SR2 & (1 << 1)));
+    return ((pI2Cx->SR2 & I2C_SR2_BUSY_MSK) != 0);
+}
+
+I2C_Error_e I2C_WaitBusy(I2C_RegDef_t *pI2Cx)
+{
+    ticks_timeout_t timeout;
+    ticks_timeoutInit(&timeout, I2C_DEFAULT_TIMEOUT);
+
+    while(I2C_IsBusy(pI2Cx))
+    {
+        I2C_Error_e error = I2C_CheckErrors(pI2Cx);
+        if(error != I2C_OK)
+        {
+            return error;
+        }
+        
+        if(ticks_timeoutIsExpired(&timeout))
+        {
+            return I2C_ERROR_TIMEOUT;
+        }
+    }
+
+    return I2C_OK;
 }
 
 
-I2C_Error_t I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs)
+I2C_Error_e I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs)
 {
     ticks_timeout_t timeout;
     ticks_timeoutInit(&timeout, I2C_DEFAULT_TIMEOUT);
 
     while(((pI2Cx->SR1 & flag) != 0U) != status)
     {
-        I2C_Error_t error = I2C_CheckErrors(pI2Cx);
+        I2C_Error_e error = I2C_CheckErrors(pI2Cx);
         if(error != I2C_OK)
         {
             return error;
@@ -133,14 +155,19 @@ void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx)
 	pI2Cx->CR1 |= (1 << I2C_CR1_STOP);
 }
 
-void I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType)
+I2C_Error_e I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType)
 {
+    I2C_Error_e error;
     address = (address << 1);
     address |= (sendType << 0);
 
     pI2Cx->DR = address;
-    while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_ADDR));
-    I2C_ClearADDRFlag(pI2Cx);
+    error = I2C_WaitForFlag(pI2Cx, I2C_FLAG_ADDR, true, I2C_DEFAULT_TIMEOUT);
+    if(error == I2C_OK)
+    {
+        I2C_ClearADDRFlag(pI2Cx);
+    }
+    return error;
 }
 
 
