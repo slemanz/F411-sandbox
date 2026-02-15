@@ -21,7 +21,7 @@ typedef enum {
     I2C_ERROR_OVR       = 0x10U,    /**< Overrun/Underrun */
     I2C_ERROR_INVALID   = 0x20U,    /**< Invalid parameter */
     I2C_ERROR_BUSY      = 0x40U     /**< Bus is busy */
-} I2C_Error_t;
+} I2C_Error_e;
 
 #define I2C_DEFAULT_TIMEOUT         10
 
@@ -159,6 +159,8 @@ typedef enum {
 #define I2C_FLAG_ADDR 		( 1 << I2C_SR1_ADDR)
 #define I2C_FLAG_TIMEOUT 	( 1 << I2C_SR1_TIMEOUT)
 
+#define I2C_SR2_BUSY_MSK    (1 << I2C_SR2_BUSY)
+
 
 #define I2C_DISABLE_SR 		DISABLE
 #define I2C_ENABLE_SR		ENABLE
@@ -189,19 +191,15 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx);
  * Data send and receive
  */
 
-I2C_Error_t I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs);
-I2C_Error_t I2C_GenereteStart(I2C_RegDef_t *pI2Cx);
+bool I2C_IsBusy(I2C_RegDef_t *pI2Cx);
+I2C_Error_e I2C_WaitForFlag(I2C_RegDef_t *pI2Cx, uint32_t flag, bool status, uint32_t timeoutMs);
+I2C_Error_e I2C_GenereteStart(I2C_RegDef_t *pI2Cx);
+I2C_Error_e I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
+I2C_Error_e I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType);
 void I2C_GenereteStop(I2C_RegDef_t *pI2Cx);
-void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
-void I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
-void I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType);
 
 void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len);
 void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len);
-
- /* Note: pTxbuffer[0] MUST contain the Slave Address */
-void I2C_MasterSendData(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len,  uint8_t Sr);
-void I2C_MasterReceiveData(I2C_RegDef_t *pI2Cx, uint8_t *pRxBuffer, uint8_t Len,  uint8_t Sr);
 
 /*
  * Other peripheral control API
