@@ -198,7 +198,7 @@ I2C_Error_e I2C_WaitBusy(I2C_RegDef_t *pI2Cx);
 I2C_Error_e I2C_SendAddress(I2C_RegDef_t *pI2Cx, uint8_t address, uint8_t sendType);
 void I2C_GenereteStop(I2C_RegDef_t *pI2Cx);
 
-void I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len);
+uint32_t I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len);
 void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len);
 
 /*
