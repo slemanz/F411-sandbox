@@ -282,8 +282,10 @@ uint32_t I2C_Send(I2C_RegDef_t *pI2Cx, uint8_t *pTxbuffer, uint32_t Len)
     return Len;
 }
 
-void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len)
+uint32_t I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len)
 {
+    I2C_Error_e error;
+
     I2C_ManageAcking(pI2Cx, ENABLE);
 
     for(uint32_t i = 0; i < Len; i++)
@@ -293,7 +295,12 @@ void I2C_Receive(I2C_RegDef_t *pI2Cx, uint8_t *pRxbuffer, uint32_t Len)
             I2C_ManageAcking(pI2Cx, DISABLE);
         }
 
-        while(!I2C_GetFlagStatus(pI2Cx, I2C_FLAG_RXNE));
+        error = I2C_WaitForFlag(pI2Cx, I2C_FLAG_RXNE, true, I2C_DEFAULT_TIMEOUT);
+        if(error != I2C_OK)
+        {
+            return i;
+        }
         pRxbuffer[i] = pI2Cx->DR;
     }
+    return Len;
 }
