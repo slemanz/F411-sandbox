@@ -19,5 +19,6 @@ extern const IO_Interface_t io0_pin;
 extern const IO_Interface_t io1_pin;
 extern const IO_Interface_t io2_pin;
 extern const IO_Interface_t io3_pin;
+extern const IO_Interface_t io4_pin;
 
 #endif /* INC_INTERFACE_INSTANCES_H_ */

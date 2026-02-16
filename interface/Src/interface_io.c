@@ -169,6 +169,43 @@ static void io3_toggle(void)
 }
 
 /************************************************************
+*                         IO4                               *
+*************************************************************/
+
+static void io4_init(void)
+{
+    GPIO_PinConfig_t io_config;
+    io_config.pGPIOx = GPIOB;
+    io_config.GPIO_PinNumber = GPIO_PIN_NO_5;
+    io_config.GPIO_PinMode = GPIO_MODE_OUT;
+    io_config.GPIO_PinSpeed = GPIO_SPEED_LOW;
+    io_config.GPIO_PinOPType = GPIO_OP_TYPE_PP;
+    io_config.GPIO_PinPuPdControl = GPIO_NO_PUPD;
+    io_config.GPIO_PinAltFunMode = GPIO_PIN_ALTFN_0;
+    GPIO_Init(&io_config);
+
+    port_is_init_var |= IO4_INIT_MASK;
+}
+
+static void io4_write(uint8_t value)
+{
+    if(!port_is_init(IO4_INIT_MASK)) io4_init();
+    GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_5, value);
+}
+
+static uint8_t io4_read(void)
+{
+    if(!port_is_init(IO4_INIT_MASK)) io4_init();
+    return GPIO_ReadFromInputPin(GPIOB, GPIO_PIN_NO_5);
+}
+
+static void io4_toggle(void)
+{
+    if(!port_is_init(IO4_INIT_MASK)) io4_init();
+    GPIO_ToggleOutputPin(GPIOB, GPIO_PIN_NO_5);
+}
+
+/************************************************************
 *                    INSTANCES
 *************************************************************/
 
@@ -204,6 +241,14 @@ const IO_Interface_t io3_pin = {
     .deinit = NULL
 };
 
+const IO_Interface_t io4_pin = {
+    .init = io4_init,
+    .read = io4_read,
+    .write = io4_write,
+    .toggle = io4_toggle,
+    .deinit = NULL
+};
+
 /************************************************************
 *                       GET
 *************************************************************/
@@ -216,7 +261,7 @@ IO_Interface_t *IO_Interface_get(uint8_t pin)
         case INTERFACE_IO_1: return (IO_Interface_t*)&io1_pin;
         case INTERFACE_IO_2: return (IO_Interface_t*)&io2_pin;
         case INTERFACE_IO_3: return (IO_Interface_t*)&io3_pin;
-        case INTERFACE_IO_4: return (IO_Interface_t*)&io2_pin;
+        case INTERFACE_IO_4: return (IO_Interface_t*)&io4_pin;
         
         default:
             return NULL;
