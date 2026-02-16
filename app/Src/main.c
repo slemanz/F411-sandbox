@@ -22,7 +22,9 @@ int main(void)
     ledPtr_t led1 = led_getByUuid(1);
     ledPtr_t led2 = led_getByUuid(2);
     ledPtr_t led3 = led_getByUuid(3);
+    ledPtr_t led4 = led_getByUuid(4);
 
+    rtc_get(&rtc);
 
     while(1)
     {
@@ -31,6 +33,7 @@ int main(void)
             led_toggle(led1);
             led_toggle(led2);
             led_toggle(led3);
+            led_toggle(led4);
         }
 
         if(simple_timer_has_elapsed(&timer_rtc))

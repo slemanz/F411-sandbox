@@ -52,7 +52,13 @@ void config_core(void)
         led_turn_off(led);
     }
 
-    led = led_create("Led 3", IO_Interface_get(INTERFACE_IO_2));
+    led = led_create("Led Red", IO_Interface_get(INTERFACE_IO_2));
+    if(led != NULL)
+    {
+        led_turn_off(led);
+    }
+
+    led = led_create("Led Yellow", IO_Interface_get(INTERFACE_IO_3));
     if(led != NULL)
     {
         led_turn_off(led);
