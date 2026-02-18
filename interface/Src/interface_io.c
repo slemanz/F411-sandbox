@@ -12,6 +12,7 @@
 #define IO2_INIT_MASK           (1U << 2)
 #define IO3_INIT_MASK           (1U << 3)
 #define IO4_INIT_MASK           (1U << 4)
+#define IO5_INIT_MASK           (1U << 5)
 
 static uint32_t port_is_init_var = 0;
 
@@ -206,6 +207,43 @@ static void io4_toggle(void)
 }
 
 /************************************************************
+*                         IO5                               *
+*************************************************************/
+
+static void io5_init(void)
+{
+    GPIO_PinConfig_t io_config;
+    io_config.pGPIOx = GPIOA;
+    io_config.GPIO_PinNumber = GPIO_PIN_NO_0;
+    io_config.GPIO_PinMode = GPIO_MODE_IN;
+    io_config.GPIO_PinSpeed = GPIO_SPEED_LOW;
+    io_config.GPIO_PinOPType = GPIO_OP_TYPE_PP;
+    io_config.GPIO_PinPuPdControl = GPIO_PIN_PU;
+    io_config.GPIO_PinAltFunMode = GPIO_PIN_ALTFN_0;
+    GPIO_Init(&io_config);
+
+    port_is_init_var |= IO5_INIT_MASK;
+}
+
+static void io5_write(uint8_t value)
+{
+    if(!port_is_init(IO5_INIT_MASK)) io5_init();
+    GPIO_WriteToOutputPin(GPIOA, GPIO_PIN_NO_0, value);
+}
+
+static uint8_t io5_read(void)
+{
+    if(!port_is_init(IO5_INIT_MASK)) io5_init();
+    return GPIO_ReadFromInputPin(GPIOA, GPIO_PIN_NO_0);
+}
+
+static void io5_toggle(void)
+{
+    if(!port_is_init(IO5_INIT_MASK)) io5_init();
+    GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NO_0);
+}
+
+/************************************************************
 *                    INSTANCES
 *************************************************************/
 
@@ -249,6 +287,14 @@ const IO_Interface_t io4_pin = {
     .deinit = NULL
 };
 
+const IO_Interface_t io5_pin = {
+    .init = io5_init,
+    .read = io5_read,
+    .write = io5_write,
+    .toggle = io5_toggle,
+    .deinit = NULL
+};
+
 /************************************************************
 *                       GET
 *************************************************************/
@@ -262,6 +308,7 @@ IO_Interface_t *IO_Interface_get(uint8_t pin)
         case INTERFACE_IO_2: return (IO_Interface_t*)&io2_pin;
         case INTERFACE_IO_3: return (IO_Interface_t*)&io3_pin;
         case INTERFACE_IO_4: return (IO_Interface_t*)&io4_pin;
+        case INTERFACE_IO_5: return (IO_Interface_t*)&io5_pin;
         
         default:
             return NULL;
