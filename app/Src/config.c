@@ -23,10 +23,9 @@
 #include "shared/pool.h"
 
 #include "bsp/led.h"
+#include "bsp/button.h"
 #include "bsp/rtc.h"
 
-#include "driver_gpio.h"
-#include "driver_i2c.h"
 
 const command_t commands_table[] = {
     {"help", cli_help, "List all commands."},
@@ -35,6 +34,7 @@ const command_t commands_table[] = {
 void config_core(void)
 {
     pool_Init();
+    poolBig_Init();
     uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2));
     cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, 1);
 
@@ -63,6 +63,20 @@ void config_core(void)
     {
         led_turn_off(led);
     }
+
+    led = led_create("Led Green", IO_Interface_get(INTERFACE_IO_4));
+    if(led != NULL)
+    {
+        led_turn_off(led);
+    }
+
+    buttonPtr_t button = button_create("Button", IO_Interface_get(INTERFACE_IO_5), 10, 500);
+    if(button != NULL)
+    {
+        button_invertLogic(button);
+    }
+
+
 }
 
 /************************************************************

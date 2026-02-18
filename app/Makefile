@@ -56,6 +56,7 @@ CORE		+= $(BUILD_DIR)/uprint.o
 
 BSP			+= $(BUILD_DIR)/led.o
 BSP			+= $(BUILD_DIR)/rtc.o
+BSP			+= $(BUILD_DIR)/button.o
 
 SHARED		+= $(BUILD_DIR)/ring-buffer.o
 SHARED		+= $(BUILD_DIR)/pool.o
