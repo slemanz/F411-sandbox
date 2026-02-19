@@ -54,7 +54,7 @@ void led_destroy(ledPtr_t led)
 {
     uprint("*** %s destroyed***\r\n", led->name);
     ledList_delete(led);
-    pool_free(led);
+    pool_Free(led);
 }
 
 ledPtr_t led_createWithUuid(const char *name, IO_Interface_t *io_pin, uint32_t uuid)

@@ -61,7 +61,7 @@ buttonPtr_t button_create(const char *name,
                            uint32_t debounce_ms,
                            uint32_t hold_time_ms)
 {
-    buttonPtr_t btn = (buttonPtr_t)pool_Allocate();
+    buttonPtr_t btn = (buttonPtr_t)poolBig_Allocate();
 
     if(btn)
     {
@@ -104,7 +104,7 @@ buttonPtr_t button_createWithUuid(const char *name,
         return NULL;
     }
 
-    buttonPtr_t btn = (buttonPtr_t)pool_Allocate();
+    buttonPtr_t btn = (buttonPtr_t)poolBig_Allocate();
 
     if(btn)
     {
@@ -134,7 +134,7 @@ void button_destroy(buttonPtr_t btn)
 {
     uprint("*** %s destroyed ***\r\n", btn->name);
     btnList_delete(btn);
-    pool_free(btn);
+    poolBig_Free(btn);
 }
 
 buttonPtr_t button_getByUuid(uint32_t uuid)
