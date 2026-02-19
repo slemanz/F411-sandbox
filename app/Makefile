@@ -53,6 +53,7 @@ INTERFACE	+= $(BUILD_DIR)/interface_io.o
 CORE		+= $(BUILD_DIR)/simple-timer.o
 CORE		+= $(BUILD_DIR)/cli.o
 CORE		+= $(BUILD_DIR)/uprint.o
+CORE		+= $(BUILD_DIR)/fault.o
 
 BSP			+= $(BUILD_DIR)/led.o
 BSP			+= $(BUILD_DIR)/rtc.o

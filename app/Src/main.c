@@ -3,6 +3,8 @@
 #include "core/simple-timer.h"
 #include "core/cli.h"
 #include "core/uprint.h"
+#include "core/fault.h"
+
 #include "bsp/led.h"
 #include "bsp/rtc.h"
 #include "bsp/button.h"
@@ -22,11 +24,10 @@ int main(void)
 
     ledPtr_t led1 = led_getByUuid(1);
     ledPtr_t led2 = led_getByUuid(2);
-    ledPtr_t led3 = led_getByUuid(3);
+    buttonPtr_t button = button_getByUuid(1);
 
     //rtc_get(&rtc);
 
-    buttonPtr_t button = button_getByUuid(1);
 
     while(1)
     {
@@ -36,14 +37,6 @@ int main(void)
             led_toggle(led2);
         }
 
-        button_update(button);
-        if(button_isPressed(button))
-        {
-            led_turn_on(led3);
-        }else
-        {
-            led_turn_off(led3);
-        }
 
         if(simple_timer_has_elapsed(&timer_rtc))
         {
@@ -52,5 +45,7 @@ int main(void)
         }
 
         cli_update();
+        fault_update();
+        button_update(button);
     }
 }

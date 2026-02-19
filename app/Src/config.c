@@ -75,8 +75,6 @@ void config_core(void)
     {
         button_invertLogic(button);
     }
-
-
 }
 
 /************************************************************
@@ -84,9 +82,58 @@ void config_core(void)
 *************************************************************/
 
 #include "bsp/led.h"
+#include "core/fault.h"
+
+void config_fault(void);
 
 void config_app(void)
 {
     config_core();
     rtc_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_I2C1));
+    config_fault();
+}
+
+/************************************************************
+*                       FAULTS                              *
+*************************************************************/
+
+static bool detect_overcurrent_output1(void)
+{
+    if(button_isPressed(button_getByUuid(1))) // must be update in main()
+    {
+        return true;
+    }
+    return false; 
+}
+
+static void action_overcurrent_output1(void)
+{
+    led_turn_on(led_getByUuid(3));
+    uprint("[APP] Output 1 disabled due to overcurrent.\r\n");
+}
+
+static void recover_overcurrent_output1(void)
+{
+    led_turn_off(led_getByUuid(3));
+    uprint("[APP] Output 1 re-enabled after cooldown.\r\n");
+}
+
+#define RECOVERY_1_MIN_MS  (1UL * 60UL * 1000UL)
+
+static fault_handle_t h_overcurrent_out1 = NULL;
+
+void config_fault(void)
+{
+    fault_init();
+    /* Overcurrent on output 1: auto-recovery after 10 minutes */
+    const fault_config_t overcurrent_cfg = {
+        .name         = "Overcurrent Out1",
+        .detect       = detect_overcurrent_output1,
+        .on_fault     = action_overcurrent_output1,
+        .on_recover   = recover_overcurrent_output1, // can be null if no recover action is needed
+        .recovery_ms  = RECOVERY_1_MIN_MS,
+        //.recovery_ms  = 5000,
+    };
+    h_overcurrent_out1 = fault_register(&overcurrent_cfg);
+    (void)h_overcurrent_out1;
 }
