@@ -137,12 +137,12 @@ void fault_update(void)
                     {
                         uprint("[FAULT] '%s' recovering\r\n", f->cfg.name);
 
+                        mask_clear_active(f);
                         if(f->cfg.on_recover != NULL)
                         {
                             f->cfg.on_recover();
                         }
 
-                        mask_clear_active(f);
                         /* history_mask bit intentionally kept set */
 
                         f->state = FAULT_STATE_IDLE;

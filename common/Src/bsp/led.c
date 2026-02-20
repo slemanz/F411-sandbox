@@ -232,21 +232,22 @@ static bool ledList_uuidExists(uint32_t uuid)
 
 struct led_rgb_t
 {
-    const char     *name;
-    IO_Interface_t *pin_r;
-    IO_Interface_t *pin_g;
-    IO_Interface_t *pin_b;
-    uint32_t        uuid;
-    bool            inverted;
-    ledRgbPtr_t     next;
+    const char      *name;
+    IO_Interface_t  *pin_r;
+    IO_Interface_t  *pin_g;
+    IO_Interface_t  *pin_b;
+    uint8_t          uuid;
+    bool             inverted;
+    led_rgb_color_e  current_color;  /* Last color set — used by toggle */
+    ledRgbPtr_t      next;
 };
 
 static ledRgbPtr_t led_rgb_header = NULL;
-static uint32_t    uuid_count     = 1;
+static uint8_t    uuid_rgb_count     = 1;
 
 static void ledRgbList_insert(ledRgbPtr_t led);
 static void ledRgbList_delete(ledRgbPtr_t led);
-static bool ledRgbList_uuidExists(uint32_t uuid);
+static bool ledRgbList_uuidExists(uint8_t uuid);
 
 /************************************************************
 *                        HELPERS                            *
@@ -282,9 +283,9 @@ ledRgbPtr_t led_rgb_create(const char *name,
 
         while(ledRgbList_uuidExists(uuid_count) == true)
         {
-            uuid_count++;
+            uuid_rgb_count++;
         }
-        led->uuid = uuid_count++;
+        led->uuid = uuid_rgb_count++;
 
         ledRgbList_insert(led);
 
@@ -302,11 +303,11 @@ ledRgbPtr_t led_rgb_createWithUuid(const char *name,
                                     IO_Interface_t *pin_r,
                                     IO_Interface_t *pin_g,
                                     IO_Interface_t *pin_b,
-                                    uint32_t uuid)
+                                    uint8_t uuid)
 {
     if(ledRgbList_uuidExists(uuid))
     {
-        uprint("Failed to create %s: UUID %lu already exists\r\n", name, uuid);
+        uprint("Failed to create %s: UUID %u already exists\r\n", name, uuid);
         return NULL;
     }
 
@@ -340,7 +341,7 @@ void led_rgb_destroy(ledRgbPtr_t led)
     pool_Free(led);
 }
 
-ledRgbPtr_t led_rgb_getByUuid(uint32_t uuid)
+ledRgbPtr_t led_rgb_getByUuid(uint8_t uuid)
 {
     ledRgbPtr_t current = led_rgb_header;
 
@@ -393,6 +394,8 @@ void led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color)
     write_pin(led->pin_r, r, led->inverted);
     write_pin(led->pin_g, g, led->inverted);
     write_pin(led->pin_b, b, led->inverted);
+
+    led->current_color = color;
 }
 
 void led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b)
@@ -402,11 +405,41 @@ void led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b)
     write_pin(led->pin_r, r, led->inverted);
     write_pin(led->pin_g, g, led->inverted);
     write_pin(led->pin_b, b, led->inverted);
+
+    /* Best-effort color tracking for setRaw — used by toggle */
+    led->current_color = LED_RGB_COLOR_OFF;
+    if( r && !g && !b) led->current_color = LED_RGB_COLOR_RED;
+    if(!r &&  g && !b) led->current_color = LED_RGB_COLOR_GREEN;
+    if(!r && !g &&  b) led->current_color = LED_RGB_COLOR_BLUE;
+    if( r &&  g && !b) led->current_color = LED_RGB_COLOR_YELLOW;
+    if(!r &&  g &&  b) led->current_color = LED_RGB_COLOR_CYAN;
+    if( r && !g &&  b) led->current_color = LED_RGB_COLOR_MAGENTA;
+    if( r &&  g &&  b) led->current_color = LED_RGB_COLOR_WHITE;
 }
 
 void led_rgb_off(ledRgbPtr_t led)
 {
     led_rgb_set(led, LED_RGB_COLOR_OFF);
+}
+
+led_rgb_color_e led_rgb_getColor(ledRgbPtr_t led)
+{
+    if(led == NULL) return LED_RGB_COLOR_OFF;
+    return led->current_color;
+}
+
+void led_rgb_toggle(ledRgbPtr_t led, led_rgb_color_e color)
+{
+    if(led == NULL) return;
+
+    if(led->current_color == LED_RGB_COLOR_OFF)
+    {
+        led_rgb_set(led, color);
+    }
+    else
+    {
+        led_rgb_set(led, LED_RGB_COLOR_OFF);
+    }
 }
 
 /************************************************************
@@ -482,7 +515,7 @@ static void ledRgbList_delete(ledRgbPtr_t led)
     }
 }
 
-static bool ledRgbList_uuidExists(uint32_t uuid)
+static bool ledRgbList_uuidExists(uint8_t uuid)
 {
     ledRgbPtr_t current = led_rgb_header;
 

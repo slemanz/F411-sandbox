@@ -72,11 +72,11 @@ ledRgbPtr_t led_rgb_createWithUuid(const char *name,
                                     IO_Interface_t *pin_r,
                                     IO_Interface_t *pin_g,
                                     IO_Interface_t *pin_b,
-                                    uint32_t uuid);
+                                    uint8_t uuid);
 
 void        led_rgb_destroy(ledRgbPtr_t led);
 
-ledRgbPtr_t led_rgb_getByUuid(uint32_t uuid);
+ledRgbPtr_t led_rgb_getByUuid(uint8_t uuid);
 
 /************************************************************
 *                     CONFIGURATION                         *
@@ -92,13 +92,14 @@ void led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color);
 void led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b);
 void led_rgb_off(ledRgbPtr_t led);
 
+led_rgb_color_e led_rgb_getColor(ledRgbPtr_t led);
+void led_rgb_toggle(ledRgbPtr_t led, led_rgb_color_e color);
+
 /************************************************************
 *                        DISPLAY                            *
 *************************************************************/
 
 void led_rgb_displayInfo(ledRgbPtr_t led);
 void led_rgb_displayAll(void);
-
-
 
 #endif /* INC_LED_H_ */
