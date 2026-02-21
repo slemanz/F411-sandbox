@@ -19,6 +19,9 @@
 #include "core/uprint.h"
 #include "core/cli.h"
 #include "core/simple-timer.h"
+#include "core/ticker.h"
+#include "core/fault.h"
+#include "driver_systick.h"
 
 #include "shared/pool.h"
 
@@ -27,16 +30,32 @@
 #include "bsp/rtc.h"
 
 
+static void cmd_status(void);
+static void cmd_leds(void);
+static void cmd_faults(void);
+static void cmd_uptime(void);
+static void cmd_rtc(void);
+
+static void cmd_pool(void);
+
 const command_t commands_table[] = {
-    {"help", cli_help, "List all commands."},
+    {"help",   cli_help,           "List all commands"},
+    {"status", cmd_status,         "System status overview"},
+    {"leds",   cmd_leds,           "List all LEDs"},
+    {"faults", cmd_faults,         "Show fault status"},
+    {"uptime", cmd_uptime,         "Show system uptime"},
+    {"rtc",    cmd_rtc,            "Show rtc time"},
+    {"pool",   cmd_pool,           "Show memory pool usage"},
 };
+
+#define COMMANDS_COUNT (sizeof(commands_table) / sizeof(commands_table[0]))
 
 void config_core(void)
 {
     pool_Init();
     poolBig_Init();
     uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2));
-    cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, 1);
+    cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, COMMANDS_COUNT);
 
     // bsp
     ledPtr_t led = led_create("Led 1", IO_Interface_get(INTERFACE_IO_0));
@@ -80,9 +99,6 @@ void config_core(void)
 /************************************************************
 *                         APP                               *
 *************************************************************/
-
-#include "bsp/led.h"
-#include "core/fault.h"
 
 void config_fault(void);
 
@@ -136,4 +152,62 @@ void config_fault(void)
     };
     h_overcurrent_out1 = fault_register(&overcurrent_cfg);
     (void)h_overcurrent_out1;
+}
+
+/************************************************************
+*                     CLI COMMANDS                          *
+*************************************************************/
+
+static void cmd_status(void)
+{
+    uint64_t ms = ticks_get();
+    uint32_t sec = (uint32_t)(ms / 1000);
+    uint32_t min = sec / 60;
+    uint32_t hrs = min / 60;
+
+    uprint("=== System Status ===\r\n");
+    uprint("Uptime: %uh %um %us\r\n", hrs, min % 60, sec % 60);
+    uprint("Pool free: %u/%u  Big: %u/%u\r\n",
+           pool_GetFreeBlockCount(), POOL_BLOCK_COUNT,
+           poolBig_GetFreeBlockCount(), POOL_BIG_BLOCK_COUNT);
+    uprint("Faults active: %s\r\n", fault_any_active() ? "YES" : "no");
+    uprint("=====================\r\n");
+}
+
+static void cmd_leds(void)
+{
+    led_displayAll();
+}
+
+static void cmd_faults(void)
+{
+    fault_print_status();
+}
+
+static void cmd_uptime(void)
+{
+    uint64_t ms = ticks_get();
+    uint32_t sec = (uint32_t)(ms / 1000);
+    uint32_t min = sec / 60;
+    uint32_t hrs = min / 60;
+    uint32_t days = hrs / 24;
+
+    uprint("%ud %uh %um %us\r\n", days, hrs % 24, min % 60, sec % 60);
+}
+
+static void cmd_pool(void)
+{
+    uprint("Standard pool: %u/%u blocks free (%u bytes each)\r\n",
+           pool_GetFreeBlockCount(), POOL_BLOCK_COUNT, POOL_BLOCK_SIZE);
+    uprint("Big pool:      %u/%u blocks free (%u bytes each)\r\n",
+           poolBig_GetFreeBlockCount(), POOL_BIG_BLOCK_COUNT, POOL_BIG_BLOCK_SIZE);
+}
+
+static void cmd_rtc(void)
+{
+    RTC_DateTime_t rtc;
+    rtc_get(&rtc);
+    uprint("%d/%d/%d - %d:%d:%d\r\n", rtc.date.date, rtc.date.month, rtc.date.year,
+                                rtc.time.hours, rtc.time.minutes, rtc.time.seconds);
+
 }

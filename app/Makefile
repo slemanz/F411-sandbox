@@ -51,6 +51,7 @@ INTERFACE	+= $(BUILD_DIR)/interface_timebase.o
 INTERFACE	+= $(BUILD_DIR)/interface_io.o
 
 CORE		+= $(BUILD_DIR)/simple-timer.o
+CORE		+= $(BUILD_DIR)/ticker.o
 CORE		+= $(BUILD_DIR)/cli.o
 CORE		+= $(BUILD_DIR)/uprint.o
 CORE		+= $(BUILD_DIR)/fault.o

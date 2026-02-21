@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "core/simple-timer.h"
+#include "core/ticker.h"
 #include "core/cli.h"
 #include "core/uprint.h"
 #include "core/fault.h"
@@ -9,43 +10,35 @@
 #include "bsp/rtc.h"
 #include "bsp/button.h"
 
-//RTC_DateTime_t rtc;
+
+static void task_blinky(void)
+{
+    led_toggle(led_getByUuid(1));
+    led_toggle(led_getByUuid(2));
+}
+
+static void task_button(void)
+{
+    button_update(button_getByUuid(1));
+}
+
+static const ticker_task_t app_tasks[] = {
+    TICKER_TASK(task_blinky,  500),
+    TICKER_TASK(task_button,  10),
+};
 
 int main(void)
 {
     config_app();
 
-    simple_timer_t timer_blinky;
-    simple_timer_t timer_rtc;
-    simple_timer_setup(&timer_blinky, 500, true);
-    simple_timer_setup(&timer_rtc, 60000, true);
+    ticker_init(app_tasks, TICKER_TASK_COUNT(app_tasks));
 
     uprint("Init the board!\r\n");
 
-    ledPtr_t led1 = led_getByUuid(1);
-    ledPtr_t led2 = led_getByUuid(2);
-    buttonPtr_t button = button_getByUuid(1);
-
-    //rtc_get(&rtc);
-
-
     while(1)
     {
-        if(simple_timer_has_elapsed(&timer_blinky))
-        {
-            led_toggle(led1);
-            led_toggle(led2);
-        }
-
-
-        if(simple_timer_has_elapsed(&timer_rtc))
-        {
-            //rtc_get(&rtc);
-            //uprint("%d/%d/%d - %d:%d:%d\r\n", rtc.date.date, rtc.date.month, rtc.date.year, rtc.time.hours, rtc.time.minutes, rtc.time.seconds);
-        }
-
+        ticker_update();
         cli_update();
         fault_update();
-        button_update(button);
     }
 }
