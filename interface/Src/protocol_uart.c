@@ -86,12 +86,19 @@ uint8_t uart2_protocol_data_available(void)
 
 void USART2_IRQHandler(void)
 {
-	//const bool overrun_occurred = UART_GetFlagStatus(UART2, UART_FLAG_ORE);
-	//const bool received_data = UART_GetFlagStatus(UART2, UART_FLAG_RXNE);
+    uint32_t sr = UART2->SR;
 
-	//if(received_data || overrun_occurred)
-    uint8_t data = UART2->DR;
-    ring_buffer_write(&rb_uart2, data);
+    if(sr & UART_FLAG_RXNE)
+    {
+        uint8_t data = UART2->DR;
+        ring_buffer_write(&rb_uart2, data);
+    }
+
+    if(sr & (1 << UART_SR_ORE))
+    {
+        /* Clear ORE by reading SR then DR (per reference manual) */
+        (void)UART2->DR;
+    }
 }
 
 
