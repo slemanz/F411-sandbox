@@ -43,7 +43,7 @@
 
 #define FLASH_BASEADDR						0x08000000U
 #define SRAM1_BASEADDR						0x20000000U
-#define ROM_BASEADDR						0x1FFF 0000 	/* system memory */
+#define ROM_BASEADDR						0x1FFF0000U 	/* system memory */
 #define SRAM1 								SRAM1_BASEADDR
 
 /*

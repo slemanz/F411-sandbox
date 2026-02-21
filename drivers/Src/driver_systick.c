@@ -1,8 +1,7 @@
 #include "driver_systick.h"
 #include "driver_clock.h"
 
-uint64_t g_ticks = 0;
-uint64_t g_ticks_p = 0;
+static volatile uint64_t g_ticks = 0;
 
 static void ticks_increment(void)
 {
@@ -13,26 +12,23 @@ void systick_init(uint32_t tick_hz)
 {
     uint32_t count_value = clock_get()/tick_hz;
 
-    // clear the value of SVR (value reload)
-    SYSTICK->LOAD &= ~(0x00FFFFFFFF);
-    
-    // load the value
-    SYSTICK->LOAD |= count_value;
+    // clear and load the reload value (24-bit counter)
+    SYSTICK->LOAD = (count_value - 1) & 0x00FFFFFFU;
 
-    // setting and enable
-    SYSTICK->CTRL |= (1 << 1);
-    SYSTICK->CTRL |= (1 << 2);
+    // clear current value so first period is accurate
+    SYSTICK->VAL = 0;
 
-    SYSTICK->CTRL |= (1 << 0);
+    // enable: processor clock source + interrupt + counter
+    SYSTICK->CTRL = SYSTICK_CTRL_CLKSRC | SYSTICK_CTRL_TICKINT | SYSTICK_CTRL_ENABLE;
 }
 
 uint64_t ticks_get(void)
 {
     INTERRUPT_DISABLE();
-	g_ticks_p = g_ticks;
-	INTERRUPT_ENABLE();
+    uint64_t snapshot = g_ticks;
+    INTERRUPT_ENABLE();
 
-	return g_ticks_p;
+    return snapshot;
 }
 
 void ticks_delay(uint64_t delay)

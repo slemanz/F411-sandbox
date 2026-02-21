@@ -110,7 +110,7 @@ void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 			EXTI->FTSR &= ~(1 << pGPIOConfig->GPIO_PinNumber);
 
 
-		}else if(pGPIOConfig->GPIO_PinMode == GPIO_MODE_IT_RT)
+		}else if(pGPIOConfig->GPIO_PinMode == GPIO_MODE_IT_RFT)
 		{
 			// configure both (FTSR and RTSR)
 			EXTI->RTSR |= (1 << pGPIOConfig->GPIO_PinNumber);
@@ -232,12 +232,10 @@ void GPIO_WriteToOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber, uint8_t Val
 {
 	if(Value == GPIO_PIN_SET)
 	{
-		// write 1 to the output data register at the bitfield corresponding to the pin number
-		pGPIOx->ODR |= (1 << PinNumber);
+		pGPIOx->BSRR = (1U << PinNumber);           /* Set bit (lower 16 bits) */
 	}else
 	{
-		// write 0
-		pGPIOx->ODR &= ~(1 << PinNumber);
+		pGPIOx->BSRR = (1U << (PinNumber + 16U));   /* Reset bit (upper 16 bits) */
 	}
 }
 
