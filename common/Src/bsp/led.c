@@ -52,7 +52,9 @@ ledPtr_t led_create(const char *name, IO_Interface_t *io_pin)
 
 void led_destroy(ledPtr_t led)
 {
-    uprint("*** %s destroyed***\r\n", led->name);
+    if(led == NULL) return;
+
+    uprint("*** %s destroyed ***\r\n", led->name);
     ledList_delete(led);
     pool_Free(led);
 }
@@ -108,26 +110,24 @@ ledPtr_t led_getByUuid(uint32_t uuid)
 
 void led_turn_on(ledPtr_t led)
 {
-    uint8_t state = 1;
-    if(led->inverted)
-    {
-        state = 0;
-    }
+    if(led == NULL) return;
+
+    uint8_t state = led->inverted ? 0 : 1;
     led->pin->write(state);
 }
 
 void led_turn_off(ledPtr_t led)
 {
-    uint8_t state = 0;
-    if(led->inverted)
-    {
-        state = 1;
-    }
+    if(led == NULL) return;
+
+    uint8_t state = led->inverted ? 1 : 0;
     led->pin->write(state);
 }
 
 void led_toggle(ledPtr_t led)
 {
+    if(led == NULL) return;
+
     led->pin->toggle();
 }
 
@@ -146,6 +146,8 @@ void led_invertLogic(ledPtr_t led)
 
 void led_displayInfo(ledPtr_t led)
 {
+    if(led == NULL) return;
+
     uprint("************************************************************\r\n");
     uprint("Device name: %s\r\n", led->name);
     uprint("************************************************************\r\n");
@@ -281,7 +283,7 @@ ledRgbPtr_t led_rgb_create(const char *name,
         led->inverted = false;
         led->next     = NULL;
 
-        while(ledRgbList_uuidExists(uuid_count) == true)
+        while(ledRgbList_uuidExists(uuid_rgb_count) == true)
         {
             uuid_rgb_count++;
         }

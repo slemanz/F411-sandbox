@@ -39,9 +39,11 @@ static void uprint_puti(int32_t n)
     if(n < 0)
     {
         uprint_send('-');
-        n = -n;
+        /* Cast to unsigned before negating to handle INT32_MIN safely */
+        uprint_putu((uint32_t)(-(int64_t)n), 10);
+        return;
     }
-    uprint_putu(n, 10);
+    uprint_putu((uint32_t)n, 10);
 }
 
 void uprint_setup(Comm_Interface_t *comm)

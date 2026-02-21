@@ -264,7 +264,7 @@ void fault_print_status(void)
     for(uint32_t i = 0; i < fault_count; i++)
     {
         fault_t *f = &fault_registry[i];
-        uprint("  [%u] %-20s  state=%-12s  count=%u  history=%s\r\n",
+        uprint("  [%u] %s  state=%s  count=%u  history=%s\r\n",
                f->index,
                f->cfg.name,
                state_names[f->state],

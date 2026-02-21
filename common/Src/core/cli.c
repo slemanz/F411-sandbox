@@ -26,15 +26,18 @@ void cli_setup(Comm_Interface_t *comm, command_t *table, uint32_t Len)
 void cli_dispatch(char *buffer)
 {
     if(cli_table == NULL) return;
+    if(buffer[0] == '\0') return;
 
-    for (int i = 0; i < cli_table_len; i++) // Match command
+    for (uint32_t i = 0; i < cli_table_len; i++)
     {
-        if (strcmp(cli_buffer, cli_table[i].name) == 0)
+        if (strcmp(buffer, cli_table[i].name) == 0)
         {
             cli_table[i].execute();
-            break;
+            return;
         }
     }
+
+    uprint("Unknown command: '%s'\r\n", buffer);
 }
 
 void cli_update(void)
@@ -58,7 +61,7 @@ void cli_update(void)
              cli_buffer[cli_idx] = '\0'; // command end
              cli_idx = 0;
              cli_dispatch(cli_buffer); // dispatch
-        }else if(cli_idx < CLI_BUFFER_SIZE)
+        }else if(cli_idx < CLI_BUFFER_SIZE - 1)
         {
             cli_buffer[cli_idx++] = (char)ch;
         }

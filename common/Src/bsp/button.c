@@ -132,6 +132,8 @@ buttonPtr_t button_createWithUuid(const char *name,
 
 void button_destroy(buttonPtr_t btn)
 {
+    if(btn == NULL) return;
+
     uprint("*** %s destroyed ***\r\n", btn->name);
     btnList_delete(btn);
     poolBig_Free(btn);
@@ -273,6 +275,8 @@ bool button_isPressed(buttonPtr_t btn)
 
 void button_displayInfo(buttonPtr_t btn)
 {
+    if(btn == NULL) return;
+
     uprint("************************************************************\r\n");
     uprint("Device name: %s (UUID: %d)\r\n", btn->name, btn->uuid);
     uprint("************************************************************\r\n");
