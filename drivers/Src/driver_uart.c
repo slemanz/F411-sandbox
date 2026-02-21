@@ -83,3 +83,121 @@ static void configure_cr3(UART_RegDef_t *pUARTx, const UART_Config_t *pUARTConfi
 /*********************************************************************
  * Public API Implementations
  *********************************************************************/
+
+void UART_PeriClockControl(UART_RegDef_t *pUARTx, uint8_t EnorDi)
+{
+    if (EnorDi == ENABLE)
+    {
+        if      (pUARTx == UART1) { UART1_PCLK_EN(); }
+        else if (pUARTx == UART2) { UART2_PCLK_EN(); }
+        else if (pUARTx == UART6) { UART6_PCLK_EN(); }
+    }
+    else
+    {
+        if      (pUARTx == UART1) { UART1_PCLK_DI(); }
+        else if (pUARTx == UART2) { UART2_PCLK_DI(); }
+        else if (pUARTx == UART6) { UART6_PCLK_DI(); }
+    }
+}
+
+void UART_Init(UART_Config_t *pUARTConfig)
+{
+    UART_PeriClockControl(pUARTConfig->pUARTx, ENABLE);
+
+    configure_cr1(pUARTConfig->pUARTx, pUARTConfig);
+
+    pUARTConfig->pUARTx->CR2 = (pUARTConfig->UART_NoOfStopBits << UART_CR2_STOP);
+
+    configure_cr3(pUARTConfig->pUARTx, pUARTConfig);
+
+    pUARTConfig->pUARTx->BRR = compute_baud_div(clock_get(), pUARTConfig->UART_Baud);
+}
+
+void UART_DeInit(UART_RegDef_t *pUARTx)
+{
+    if      (pUARTx == UART1) { UART1_REG_RESET(); }
+    else if (pUARTx == UART2) { UART2_REG_RESET(); }
+    else if (pUARTx == UART6) { UART6_REG_RESET(); }
+}
+
+void UART_PeripheralControl(UART_RegDef_t *pUARTx, uint8_t EnorDi)
+{
+    if (EnorDi == ENABLE)
+    {
+        pUARTx->CR1 |= (1U << UART_CR1_UE);
+    }
+    else
+    {
+        pUARTx->CR1 &= ~(1U << UART_CR1_UE);
+    }
+}
+
+bool UART_GetFlagStatus(UART_RegDef_t *pUARTx, uint32_t flag)
+{
+    return ((pUARTx->SR & flag) != 0U);
+}
+
+UART_Error_e UART_WaitForFlag(UART_RegDef_t *pUARTx, uint32_t flag, bool status, uint32_t timeoutMs)
+{
+    ticks_timeout_t timeout;
+    ticks_timeoutInit(&timeout, timeoutMs);
+
+    while (((pUARTx->SR & flag) != 0U) != status)
+    {
+        UART_Error_e error = UART_CheckErrors(pUARTx);
+        if (error != UART_OK)
+        {
+            return error;
+        }
+
+        if (ticks_timeoutIsExpired(&timeout))
+        {
+            return UART_ERROR_TIMEOUT;
+        }
+    }
+
+    return UART_OK;
+}
+
+UART_Error_e UART_WriteByte(UART_RegDef_t *pUARTx, uint8_t data)
+{
+    UART_Error_e error = UART_WaitForFlag(pUARTx, UART_FLAG_TXE, true, UART_DEFAULT_TIMEOUT);
+    if (error != UART_OK)
+    {
+        return error;
+    }
+
+    pUARTx->DR = data;
+    return UART_OK;
+}
+
+UART_Error_e UART_Write(UART_RegDef_t *pUARTx, const uint8_t *pTxBuffer, uint32_t Len)
+{
+    for (uint32_t i = 0; i < Len; i++)
+    {
+        UART_Error_e error = UART_WriteByte(pUARTx, pTxBuffer[i]);
+        if (error != UART_OK)
+        {
+            return error;
+        }
+    }
+
+    return UART_WaitForFlag(pUARTx, UART_FLAG_TC, true, UART_DEFAULT_TIMEOUT);
+}
+
+uint8_t UART_ReadByte(UART_RegDef_t *pUARTx)
+{
+    return (uint8_t)pUARTx->DR;
+}
+
+void UART_InterruptControl(UART_RegDef_t *pUARTx, uint32_t interruptMask, uint8_t EnorDi)
+{
+    if (EnorDi == ENABLE)
+    {
+        pUARTx->CR1 |= interruptMask;
+    }
+    else
+    {
+        pUARTx->CR1 &= ~interruptMask;
+    }
+}
