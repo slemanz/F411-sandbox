@@ -10,7 +10,7 @@
 #define SERIAL_BUFFER_SIZE     128
 
 /************************************************************
-*                       SCI2                                *
+*                         UART2                             *
 *************************************************************/
 
 static ring_buffer_t rb_uart2 = {0U};
@@ -47,7 +47,7 @@ void uart2_protocol_init(void)
 
     UART_Init(&uart_config);
 
-    UART_InterruptConfig(UART2, UART_INTERRUPT_RXNEIE, ENABLE);
+    UART_InterruptControl(UART2, UART_INTERRUPT_RXNEIE, ENABLE);
     interrupt_Config(IRQ_NO_UART2, ENABLE);
     UART_PeripheralControl(UART2, ENABLE);
 
@@ -58,7 +58,7 @@ void uart2_protocol_init(void)
 void uart2_protocol_send(uint8_t *data, uint32_t Len)
 {
     if(!uart2_is_init) uart2_protocol_init();
-    UART_write(UART2, data, Len);
+    UART_Write(UART2, data, Len);
 }
 
 uint8_t uart2_protocol_receive(uint8_t *buffer, uint32_t Len)
@@ -90,7 +90,7 @@ void USART2_IRQHandler(void)
 
     if(sr & UART_FLAG_RXNE)
     {
-        uint8_t data = UART2->DR;
+        uint8_t data = UART_ReadByte(UART2);
         ring_buffer_write(&rb_uart2, data);
     }
 
