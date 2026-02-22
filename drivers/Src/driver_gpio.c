@@ -1,20 +1,5 @@
 #include "driver_gpio.h"
 
-/**************************************************************************
- * @fn				- GPIO_PeriClockControl
- *
- * @brief			- this functions enable and disables peripheral clock
- * 					  for the given GPIO port
- *
- * @param[in]		- base address of the gpio peripheral
- * @param[in]		- ENABLE or DISABLE macros
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
-
 
 void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
 {
@@ -37,18 +22,6 @@ void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
 	}
 }
 
-/**************************************************************************
- * @fn				- GPIO_Init
- *
- * @brief			- this function config the given GPIO pin handle
- *
- * @param[in]		- GPIO handle struct
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
 void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 {
     // enable clock to the port
@@ -131,19 +104,6 @@ void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 	}
 }
 
-/**************************************************************************
- * @fn				- GPIO_DeInit
- *
- * @brief			- de init a port of GPIO
- *
- * @param[in]		- base address of gpio peripheral
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
-
 void GPIO_DeInit(GPIO_RegDef_t *pGPIOx)
 {
 	if		(pGPIOx == GPIOA) GPIOA_REG_RESET();
@@ -169,21 +129,6 @@ void GPIO_Init_table(const GPIO_PinConfig_t *pGPIOConfig, uint32_t Len)
 }
 
 
-
-
-/**************************************************************************
- * @fn				- GPIO_ReadFromInputPin
- *
- * @brief			-
- *
- * @param[in]		-
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
-
 uint8_t  GPIO_ReadFromInputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber)
 {
 	uint8_t value;
@@ -193,20 +138,6 @@ uint8_t  GPIO_ReadFromInputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber)
 }
 
 
-
-/**************************************************************************
- * @fn				- GPIO_ReadFromInputPort
- *
- * @brief			-
- *
- * @param[in]		-
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
-
 uint16_t GPIO_ReadFromInputPort(GPIO_RegDef_t *pGPIOx)
 {
 	uint16_t value;
@@ -214,19 +145,6 @@ uint16_t GPIO_ReadFromInputPort(GPIO_RegDef_t *pGPIOx)
 
 	return value;
 }
-
-/**************************************************************************
- * @fn				- GPIO_WriteToOutputPin
- *
- * @brief			-
- *
- * @param[in]		-
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
 
 void GPIO_WriteToOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber, uint8_t Value)
 {
@@ -239,20 +157,13 @@ void GPIO_WriteToOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber, uint8_t Val
 	}
 }
 
-/**************************************************************************
- * @fn				- GPIO_ToggleOutputPin
- *
- * @brief			-
- *
- * @param[in]		-
- *
- * @return			- none
- *
- * @Note			- none
- *
- */
-
 void GPIO_ToggleOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber)
 {
 	pGPIOx->ODR ^= (1 << PinNumber);
+}
+
+void GPIO_SetPinMode(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t mode)
+{
+    pGPIOx->MODER &= ~(0x3U << (2U * pinNumber));
+    pGPIOx->MODER |=  ((mode & 0x3U) << (2U * pinNumber));
 }
