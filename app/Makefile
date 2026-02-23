@@ -37,18 +37,22 @@ OBJS		+= $(BUILD_DIR)/config.o
 OBJS		+= $(BUILD_DIR)/syscalls.o
 OBJS		+= $(BUILD_DIR)/startup.o
 
+DRIVERS		+= $(BUILD_DIR)/driver_adc.o
 DRIVERS		+= $(BUILD_DIR)/driver_clock.o
-DRIVERS		+= $(BUILD_DIR)/driver_systick.o
 DRIVERS		+= $(BUILD_DIR)/driver_gpio.o
-DRIVERS		+= $(BUILD_DIR)/driver_uart.o
 DRIVERS		+= $(BUILD_DIR)/driver_i2c.o
 DRIVERS		+= $(BUILD_DIR)/driver_interrupt.o
+DRIVERS		+= $(BUILD_DIR)/driver_systick.o
+DRIVERS		+= $(BUILD_DIR)/driver_timer.o
+DRIVERS		+= $(BUILD_DIR)/driver_uart.o
 
+INTERFACE	+= $(BUILD_DIR)/interface_adc.o
 INTERFACE	+= $(BUILD_DIR)/interface_comm.o
-INTERFACE	+= $(BUILD_DIR)/protocol_uart.o
-INTERFACE	+= $(BUILD_DIR)/protocol_i2c.o
-INTERFACE	+= $(BUILD_DIR)/interface_timebase.o
 INTERFACE	+= $(BUILD_DIR)/interface_io.o
+INTERFACE	+= $(BUILD_DIR)/interface_pwm.o
+INTERFACE	+= $(BUILD_DIR)/interface_timebase.o
+INTERFACE	+= $(BUILD_DIR)/protocol_i2c.o
+INTERFACE	+= $(BUILD_DIR)/protocol_uart.o
 
 CORE		+= $(BUILD_DIR)/simple-timer.o
 CORE		+= $(BUILD_DIR)/ticker.o
@@ -59,6 +63,7 @@ CORE		+= $(BUILD_DIR)/fault.o
 BSP			+= $(BUILD_DIR)/led.o
 BSP			+= $(BUILD_DIR)/rtc.o
 BSP			+= $(BUILD_DIR)/button.o
+BSP			+= $(BUILD_DIR)/output.o
 
 SHARED		+= $(BUILD_DIR)/ring-buffer.o
 SHARED		+= $(BUILD_DIR)/pool.o

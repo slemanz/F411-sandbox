@@ -28,10 +28,13 @@
 #include "bsp/led.h"
 #include "bsp/button.h"
 #include "bsp/rtc.h"
+#include "bsp/output.h"
 
 
 static void cmd_status(void);
 static void cmd_leds(void);
+static void cmd_outputs(void);
+static void cmd_adc(void);
 static void cmd_faults(void);
 static void cmd_uptime(void);
 static void cmd_rtc(void);
@@ -42,6 +45,8 @@ const command_t commands_table[] = {
     {"help",   cli_help,           "List all commands"},
     {"status", cmd_status,         "System status overview"},
     {"leds",   cmd_leds,           "List all LEDs"},
+    {"outputs",cmd_outputs,        "List all PWM outputs"},
+    {"adc",    cmd_adc,            "Read ADC0 (PA1, 12-bit)"},
     {"faults", cmd_faults,         "Show fault status"},
     {"uptime", cmd_uptime,         "Show system uptime"},
     {"rtc",    cmd_rtc,            "Show rtc time"},
@@ -62,12 +67,6 @@ void config_core(void)
     if(led != NULL)
     {
         led_invertLogic(led);
-        led_turn_off(led);
-    }
-
-    led = led_create("Led 2", IO_Interface_get(INTERFACE_IO_1));
-    if(led != NULL)
-    {
         led_turn_off(led);
     }
 
@@ -93,6 +92,12 @@ void config_core(void)
     if(button != NULL)
     {
         button_invertLogic(button);
+    }
+
+    outputPtr_t out = output_create("Output 1", PWM_Interface_get(INTERFACE_PWM_0));
+    if (out != NULL)
+    {
+        output_set(out, 30U);
     }
 }
 
@@ -177,6 +182,26 @@ static void cmd_status(void)
 static void cmd_leds(void)
 {
     led_displayAll();
+}
+
+static void cmd_outputs(void)
+{
+    output_displayAll();
+}
+
+static void cmd_adc(void)
+{
+    ADC_Interface_t *adc = ADC_Interface_get(INTERFACE_ADC_0);
+    if (adc == NULL)
+    {
+        uprint("[ADC] Interface not available.\r\n");
+        return;
+    }
+
+    uint16_t raw     = adc->read();
+    uint32_t mv      = (raw * 3300UL) / 4095UL;
+
+    uprint("ADC0 (PA1): raw=%u  voltage=%u mV\r\n", raw, mv);
 }
 
 static void cmd_faults(void)
