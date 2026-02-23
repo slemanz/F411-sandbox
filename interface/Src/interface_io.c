@@ -58,6 +58,12 @@ static void io0_toggle(void)
     GPIO_ToggleOutputPin(GPIOC, GPIO_PIN_NO_13);
 }
 
+static void io0_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO0_INIT_MASK)) io0_init();
+    GPIO_SetPinMode(GPIOC, GPIO_PIN_NO_13, mode);
+}
+
 /************************************************************
 *                         IO1                               *
 *************************************************************/
@@ -93,6 +99,12 @@ static void io1_toggle(void)
 {
     if(!port_is_init(IO1_INIT_MASK)) io1_init();
     GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NO_5);
+}
+
+static void io1_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO1_INIT_MASK)) io1_init();
+    GPIO_SetPinMode(GPIOA, GPIO_PIN_NO_5, mode);
 }
 
 /************************************************************
@@ -132,6 +144,12 @@ static void io2_toggle(void)
     GPIO_ToggleOutputPin(GPIOB, GPIO_PIN_NO_3);
 }
 
+static void io2_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO2_INIT_MASK)) io2_init();
+    GPIO_SetPinMode(GPIOB, GPIO_PIN_NO_3, mode);
+}
+
 /************************************************************
 *                         IO3                               *
 *************************************************************/
@@ -167,6 +185,12 @@ static void io3_toggle(void)
 {
     if(!port_is_init(IO3_INIT_MASK)) io3_init();
     GPIO_ToggleOutputPin(GPIOB, GPIO_PIN_NO_4);
+}
+
+static void io3_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO3_INIT_MASK)) io3_init();
+    GPIO_SetPinMode(GPIOB, GPIO_PIN_NO_4, mode);
 }
 
 /************************************************************
@@ -206,6 +230,12 @@ static void io4_toggle(void)
     GPIO_ToggleOutputPin(GPIOB, GPIO_PIN_NO_5);
 }
 
+static void io4_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO4_INIT_MASK)) io4_init();
+    GPIO_SetPinMode(GPIOB, GPIO_PIN_NO_5, mode);
+}
+
 /************************************************************
 *                         IO5                               *
 *************************************************************/
@@ -243,56 +273,68 @@ static void io5_toggle(void)
     GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NO_0);
 }
 
+static void io5_set_mode(uint8_t mode)
+{
+    if (!port_is_init(IO5_INIT_MASK)) io5_init();
+    GPIO_SetPinMode(GPIOA, GPIO_PIN_NO_0, mode);
+}
+
 /************************************************************
 *                    INSTANCES
 *************************************************************/
 
 const IO_Interface_t io0_pin = {
-    .init = io0_init,
-    .read = io0_read,
-    .write = io0_write,
-    .toggle = io0_toggle,
-    .deinit = NULL
+    .init     = io0_init,
+    .read     = io0_read,
+    .write    = io0_write,
+    .toggle   = io0_toggle,
+    .set_mode = io0_set_mode,
+    .deinit   = NULL,
 };
 
 const IO_Interface_t io1_pin = {
-    .init = io1_init,
-    .read = io1_read,
-    .write = io1_write,
-    .toggle = io1_toggle,
-    .deinit = NULL
+    .init     = io1_init,
+    .read     = io1_read,
+    .write    = io1_write,
+    .toggle   = io1_toggle,
+    .set_mode = io1_set_mode,
+    .deinit   = NULL,
 };
 
 const IO_Interface_t io2_pin = {
-    .init = io2_init,
-    .read = io2_read,
-    .write = io2_write,
-    .toggle = io2_toggle,
-    .deinit = NULL
+    .init     = io2_init,
+    .read     = io2_read,
+    .write    = io2_write,
+    .toggle   = io2_toggle,
+    .set_mode = io2_set_mode,
+    .deinit   = NULL,
 };
 
 const IO_Interface_t io3_pin = {
-    .init = io3_init,
-    .read = io3_read,
-    .write = io3_write,
-    .toggle = io3_toggle,
-    .deinit = NULL
+    .init     = io3_init,
+    .read     = io3_read,
+    .write    = io3_write,
+    .toggle   = io3_toggle,
+    .set_mode = io3_set_mode,
+    .deinit   = NULL,
 };
 
 const IO_Interface_t io4_pin = {
-    .init = io4_init,
-    .read = io4_read,
-    .write = io4_write,
-    .toggle = io4_toggle,
-    .deinit = NULL
+    .init     = io4_init,
+    .read     = io4_read,
+    .write    = io4_write,
+    .toggle   = io4_toggle,
+    .set_mode = io4_set_mode,
+    .deinit   = NULL,
 };
 
 const IO_Interface_t io5_pin = {
-    .init = io5_init,
-    .read = io5_read,
-    .write = io5_write,
-    .toggle = io5_toggle,
-    .deinit = NULL
+    .init     = io5_init,
+    .read     = io5_read,
+    .write    = io5_write,
+    .toggle   = io5_toggle,
+    .set_mode = io5_set_mode,
+    .deinit   = NULL,
 };
 
 /************************************************************
