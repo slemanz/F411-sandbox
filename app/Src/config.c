@@ -4,6 +4,7 @@
 *                       DRIVERS                             *
 *************************************************************/
 #include "driver_clock.h"
+#include "driver_fpu.h"
 
 
 /************************************************************
@@ -109,6 +110,7 @@ void config_fault(void);
 
 void config_app(void)
 {
+    fpu_enable();
     config_core();
     rtc_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_I2C1));
     config_fault();

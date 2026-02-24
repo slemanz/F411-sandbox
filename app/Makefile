@@ -2,12 +2,12 @@ CC=arm-none-eabi-gcc
 TARGET=flash
 
 MACH=-mcpu=cortex-m4
-FLOAT=-mfloat-abi=soft
+FLOAT=-mfloat-abi=hard
 
 BUILD_DIR = Build
 ROOT_DIR = ..
 
-LINKER= -T $(ROOT_DIR)/linkers/STM32F411.ld
+LINKER= -T $(ROOT_DIR)/drivers/Device/linkers/STM32F411.ld
 MAP_FILE= -Wl,-Map=$(BUILD_DIR)/$(TARGET).map
 
 CFLAGS= -c $(MACH) -mthumb $(FLOAT) -std=gnu99 -Wall -O0 -g3 \
@@ -39,6 +39,7 @@ OBJS		+= $(BUILD_DIR)/startup.o
 
 DRIVERS		+= $(BUILD_DIR)/driver_adc.o
 DRIVERS		+= $(BUILD_DIR)/driver_clock.o
+DRIVERS		+= $(BUILD_DIR)/driver_fpu.o
 DRIVERS		+= $(BUILD_DIR)/driver_gpio.o
 DRIVERS		+= $(BUILD_DIR)/driver_i2c.o
 DRIVERS		+= $(BUILD_DIR)/driver_interrupt.o
@@ -93,8 +94,11 @@ $(BUILD_DIR)/%.o: $(ROOT_DIR)/common/Src/bsp/%.c
 $(BUILD_DIR)/%.o: $(ROOT_DIR)/common/Src/shared/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(ROOT_DIR)/common/Src/shared/$(*).c
 
-$(BUILD_DIR)/%.o: $(ROOT_DIR)/linkers/*.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(ROOT_DIR)/linkers/$(*).c
+$(BUILD_DIR)/%.o: $(ROOT_DIR)/drivers/Device/system/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(ROOT_DIR)/drivers/Device/system/$(*).c
+
+$(BUILD_DIR)/%.o: $(ROOT_DIR)/drivers/Device/startup/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(ROOT_DIR)/drivers/Device/startup/$(*).c
 
 # TARGET ELF
 $(BUILD_DIR)/$(TARGET).elf: $(OBJS) $(DRIVERS) $(CORE) $(BSP) $(SHARED) $(INTERFACE)
