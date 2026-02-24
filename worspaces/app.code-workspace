@@ -12,9 +12,6 @@
         {
             "path": "../drivers"
         },
-        {
-            "path": "../linkers"
-        }
     ],
     "settings": {
         "C_Cpp.default.includePath": [
