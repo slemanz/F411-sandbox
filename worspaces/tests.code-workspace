@@ -1,0 +1,19 @@
+{
+	"folders": [
+        {
+            "name": "tests",
+            "path": "../tests"
+        },
+        {
+            "name": "common",
+            "path": "../common"
+        },
+    ],
+    "settings": {
+        "C_Cpp.default.includePath": [
+            "${workspaceFolder:tests}/framework",
+            "${workspaceFolder:tests}/mocks",
+            "${workspaceFolder:common}/Inc",
+        ],
+    }
+}
