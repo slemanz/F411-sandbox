@@ -91,6 +91,53 @@ TEST(SimpleTimer, OneshotResetAllowsNewFire)
     TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
 }
 
+/* ================================================================== */
+/*  Tests — Auto-reset behaviour                                      */
+/* ================================================================== */
+
+TEST(SimpleTimer, AutoResetFiresRepeatedly)
+{
+    simple_timer_t t = make_autoreset(50);
+
+    mock_timebase_advance(50);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(50);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(50);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
+TEST(SimpleTimer, AutoResetDoesNotFireBetweenPeriods)
+{
+    simple_timer_t t = make_autoreset(50);
+
+    mock_timebase_advance(50);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(25);
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t));
+}
+
+TEST(SimpleTimer, AutoResetCompensatesDrift)
+{
+    /*
+     * Period = 100 ms, ideal deadlines at 100, 200, 300...
+     * If we poll at 110 ms (10 ms late), the next deadline 
+     * must remain exactly at 200 ms to stay accurate.
+     */
+    simple_timer_t t = make_autoreset(100);
+
+    mock_timebase_advance(110);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(80);
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(10);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
 
 /* ================================================================== */
 /*  Test runner                                                        */
@@ -104,4 +151,9 @@ TEST_GROUP_RUNNER(SimpleTimer)
     RUN_TEST_CASE(SimpleTimer, ElapsesWhenPastDeadline);
     RUN_TEST_CASE(SimpleTimer, OneshotFiresOnlyOnce);
     RUN_TEST_CASE(SimpleTimer, OneshotResetAllowsNewFire);
+
+    /* Auto-reset */
+    RUN_TEST_CASE(SimpleTimer, AutoResetFiresRepeatedly);
+    RUN_TEST_CASE(SimpleTimer, AutoResetDoesNotFireBetweenPeriods);
+    RUN_TEST_CASE(SimpleTimer, AutoResetCompensatesDrift);
 }
