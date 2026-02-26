@@ -140,6 +140,32 @@ TEST(SimpleTimer, AutoResetCompensatesDrift)
 }
 
 /* ================================================================== */
+/*  Tests — setup edge cases                                           */
+/* ================================================================== */
+
+TEST(SimpleTimer, ZeroWaitTimeElapsesImmediately)
+{
+    simple_timer_t t = make_oneshot(0);
+
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
+TEST(SimpleTimer, TimerStartedInTheFutureDoesNotElapse)
+{
+    mock_timebase_set_ticks(1000);
+
+    simple_timer_t t;
+    simple_timer_setup(&t, 500, false);
+
+    mock_timebase_advance(499);
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(1);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
+
+/* ================================================================== */
 /*  Test runner                                                        */
 /* ================================================================== */
 
@@ -156,4 +182,8 @@ TEST_GROUP_RUNNER(SimpleTimer)
     RUN_TEST_CASE(SimpleTimer, AutoResetFiresRepeatedly);
     RUN_TEST_CASE(SimpleTimer, AutoResetDoesNotFireBetweenPeriods);
     RUN_TEST_CASE(SimpleTimer, AutoResetCompensatesDrift);
+
+    /* Edge cases */
+    RUN_TEST_CASE(SimpleTimer, ZeroWaitTimeElapsesImmediately);
+    RUN_TEST_CASE(SimpleTimer, TimerStartedInTheFutureDoesNotElapse);
 }
