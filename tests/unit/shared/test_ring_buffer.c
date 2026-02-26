@@ -22,6 +22,25 @@ TEST_TEAR_DOWN(RingBuffer)
 {
 }
 
+/* ================================================================== */
+/*  Tests — initial state                                             */
+/* ================================================================== */
+
+TEST(RingBuffer, IsEmptyAfterSetup)
+{
+    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
+}
+
+TEST(RingBuffer, ReadFromEmptyReturnsFalse)
+{
+    uint8_t byte;
+    TEST_ASSERT_FALSE(ring_buffer_read(&rb, &byte));
+}
+
+/* ================================================================== */
+/*  Tests — write / read                                              */
+/* ================================================================== */
+
 
 /* ================================================================== */
 /*  Test runner                                                       */
@@ -30,4 +49,8 @@ TEST_TEAR_DOWN(RingBuffer)
 TEST_GROUP_RUNNER(RingBuffer)
 {
     /* Initial State */
+    RUN_TEST_CASE(RingBuffer, IsEmptyAfterSetup);
+    RUN_TEST_CASE(RingBuffer, ReadFromEmptyReturnsFalse);
+
+    /* Write / Read */
 }
