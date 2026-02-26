@@ -3,3 +3,7 @@
 *.bin
 *.elf
 *.jdebug.user
+
+*.o
+run_tests
+run_tests.exe

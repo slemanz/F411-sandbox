@@ -50,6 +50,22 @@ TEST(SimpleTimer, DoesNotElapseBforeDeadline)
     TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t));
 }
 
+TEST(SimpleTimer, ElapsedExactlyAtDeadLine)
+{
+    simple_timer_t t = make_oneshot(100);
+
+    mock_timebase_advance(100);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
+TEST(SimpleTimer, ElapsesWhenPastDeadline)
+{
+    simple_timer_t t = make_oneshot(100);
+
+    mock_timebase_advance(200);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
 
 /* ================================================================== */
 /*  Test runner                                                        */
@@ -59,4 +75,6 @@ TEST_GROUP_RUNNER(SimpleTimer)
 {
     /* One-shot */
     RUN_TEST_CASE(SimpleTimer, DoesNotElapseBforeDeadline);
+    RUN_TEST_CASE(SimpleTimer, ElapsedExactlyAtDeadLine);
+    RUN_TEST_CASE(SimpleTimer, ElapsesWhenPastDeadline);
 }
