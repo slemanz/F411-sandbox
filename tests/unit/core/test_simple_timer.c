@@ -66,6 +66,31 @@ TEST(SimpleTimer, ElapsesWhenPastDeadline)
     TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
 }
 
+TEST(SimpleTimer, OneshotFiresOnlyOnce)
+{
+    simple_timer_t t = make_oneshot(100);
+
+    mock_timebase_advance(100);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));  // first call
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t)); // second call
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t)); // third call
+}
+
+TEST(SimpleTimer, OneshotResetAllowsNewFire)
+{
+    simple_timer_t t = make_oneshot(100);
+
+    mock_timebase_advance(100);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+
+    /* reset from current tick */
+    simple_timer_reset(&t);
+    TEST_ASSERT_FALSE(simple_timer_has_elapsed(&t));
+
+    mock_timebase_advance(100);
+    TEST_ASSERT_TRUE(simple_timer_has_elapsed(&t));
+}
+
 
 /* ================================================================== */
 /*  Test runner                                                        */
@@ -77,4 +102,6 @@ TEST_GROUP_RUNNER(SimpleTimer)
     RUN_TEST_CASE(SimpleTimer, DoesNotElapseBforeDeadline);
     RUN_TEST_CASE(SimpleTimer, ElapsedExactlyAtDeadLine);
     RUN_TEST_CASE(SimpleTimer, ElapsesWhenPastDeadline);
+    RUN_TEST_CASE(SimpleTimer, OneshotFiresOnlyOnce);
+    RUN_TEST_CASE(SimpleTimer, OneshotResetAllowsNewFire);
 }
