@@ -69,6 +69,57 @@ TEST(RingBuffer, EmptyAfterWriteThenRead)
     TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
 }
 
+
+TEST(RingBuffer, PreservesFIFOOrder)
+{
+    /*
+     * Write bytes 1, 2, 3 and verify they come back in the same order
+     */
+    ring_buffer_write(&rb, 1);
+    ring_buffer_write(&rb, 2);
+    ring_buffer_write(&rb, 3);
+
+    uint8_t a, b, c;
+    ring_buffer_read(&rb, &a);
+    ring_buffer_read(&rb, &b);
+    ring_buffer_read(&rb, &c);
+
+    TEST_ASSERT_EQUAL_UINT8(1, a);
+    TEST_ASSERT_EQUAL_UINT8(2, b);
+    TEST_ASSERT_EQUAL_UINT8(3, c);
+}
+
+/* ================================================================== */
+/*  Tests — capacity                                                  */
+/* ================================================================== */
+
+TEST(RingBuffer, FillsToCapacityMinusOne)
+{
+    /*
+     * The implementation sacrifices one slot to distinguish full from
+     * empty, so a buffer of size N holds N-1 bytes.
+     */
+    uint8_t capacity = BUF_SIZE - 1;
+
+    for(uint8_t i = 0; i < capacity; i++)
+    {
+        TEST_ASSERT_TRUE(ring_buffer_write(&rb, i));
+    }
+}
+
+TEST(RingBuffer, WriteReturnsFalseWhenFull)
+{
+    uint8_t capacity = BUF_SIZE - 1;
+
+    for(uint8_t i = 0; i < capacity; i++)
+    {
+        ring_buffer_write(&rb, i);
+    }
+    /* One more write must be rejected */
+    TEST_ASSERT_FALSE(ring_buffer_write(&rb, 0xFF));
+}
+
+
 /* ================================================================== */
 /*  Test runner                                                       */
 /* ================================================================== */
@@ -84,4 +135,9 @@ TEST_GROUP_RUNNER(RingBuffer)
     RUN_TEST_CASE(RingBuffer, ReadReturnsByteWritten);
     RUN_TEST_CASE(RingBuffer, NotEmptyAfterWrite);
     RUN_TEST_CASE(RingBuffer, EmptyAfterWriteThenRead);
+    RUN_TEST_CASE(RingBuffer, PreservesFIFOOrder);
+
+    /* Capacity */
+    RUN_TEST_CASE(RingBuffer, FillsToCapacityMinusOne);
+    RUN_TEST_CASE(RingBuffer, WriteReturnsFalseWhenFull);
 }
