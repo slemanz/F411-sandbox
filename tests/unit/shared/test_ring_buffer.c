@@ -120,6 +120,35 @@ TEST(RingBuffer, WriteReturnsFalseWhenFull)
 }
 
 
+TEST(RingBuffer, OverflowDoesNotCorruptData)
+{
+    /*
+     * Fill the buffer, reject the overflow write, then read back all
+     * bytes and verify none were corrupted.
+     */
+    uint8_t capacity = BUF_SIZE - 1;
+
+    for(uint8_t i = 0; i < capacity; i++)
+    {
+        ring_buffer_write(&rb, i);
+    }
+
+    ring_buffer_write(&rb, 0xFF); /* Rejected */
+
+    for(uint8_t i = 0; i < capacity; i++)
+    {
+        uint8_t byte;
+        ring_buffer_read(&rb, &byte);
+        TEST_ASSERT_EQUAL_UINT8(i, byte);
+    }
+
+}
+
+/* ================================================================== */
+/*  Tests — wrap-around                                               */
+/* ================================================================== */
+
+
 /* ================================================================== */
 /*  Test runner                                                       */
 /* ================================================================== */
@@ -140,4 +169,7 @@ TEST_GROUP_RUNNER(RingBuffer)
     /* Capacity */
     RUN_TEST_CASE(RingBuffer, FillsToCapacityMinusOne);
     RUN_TEST_CASE(RingBuffer, WriteReturnsFalseWhenFull);
+    RUN_TEST_CASE(RingBuffer, OverflowDoesNotCorruptData);
+
+    /* Wrap-around*/
 }
