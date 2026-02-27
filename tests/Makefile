@@ -11,10 +11,12 @@ INCLUDES += -I $(COMMON_DIR)/Inc
 
 PROD 	+= $(BUILD_DIR)/simple-timer.o
 PROD 	+= $(BUILD_DIR)/ring-buffer.o
+PROD 	+= $(BUILD_DIR)/pool.o
 
 TESTS 	+= $(BUILD_DIR)/AllTestRunner.o
 TESTS 	+= $(BUILD_DIR)/test_simple_timer.o
 TESTS 	+= $(BUILD_DIR)/test_ring_buffer.o
+TESTS 	+= $(BUILD_DIR)/test_pool.o
 
 MOCKS 	+= $(BUILD_DIR)/mock_timebase.o
 

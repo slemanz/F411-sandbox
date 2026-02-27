@@ -8,6 +8,7 @@ void RunAllTests(void)
 {
     /* shared */
     RUN_TEST_GROUP(RingBuffer);
+    RUN_TEST_GROUP(Pool);
 
     /* core */
     RUN_TEST_GROUP(SimpleTimer);
