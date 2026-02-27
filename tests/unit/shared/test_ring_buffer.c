@@ -41,6 +41,33 @@ TEST(RingBuffer, ReadFromEmptyReturnsFalse)
 /*  Tests — write / read                                              */
 /* ================================================================== */
 
+TEST(RingBuffer, ReadReturnsTrueWhenNotFull)
+{
+    TEST_ASSERT_TRUE(ring_buffer_write(&rb, 0xAB));
+}
+
+TEST(RingBuffer, ReadReturnsByteWritten)
+{
+    ring_buffer_write(&rb, 0x42);
+
+    uint8_t byte = 0;
+    TEST_ASSERT_TRUE(ring_buffer_read(&rb, &byte));
+    TEST_ASSERT_EQUAL_UINT8(0x42, byte);
+}
+
+TEST(RingBuffer, NotEmptyAfterWrite)
+{
+    ring_buffer_write(&rb, 0x01);
+    TEST_ASSERT_FALSE(ring_buffer_empty(&rb));
+}
+
+TEST(RingBuffer, EmptyAfterWriteThenRead)
+{
+    uint8_t byte;
+    ring_buffer_write(&rb, 0x55);
+    ring_buffer_read(&rb, &byte);
+    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
+}
 
 /* ================================================================== */
 /*  Test runner                                                       */
@@ -53,4 +80,8 @@ TEST_GROUP_RUNNER(RingBuffer)
     RUN_TEST_CASE(RingBuffer, ReadFromEmptyReturnsFalse);
 
     /* Write / Read */
+    RUN_TEST_CASE(RingBuffer, ReadReturnsTrueWhenNotFull);
+    RUN_TEST_CASE(RingBuffer, ReadReturnsByteWritten);
+    RUN_TEST_CASE(RingBuffer, NotEmptyAfterWrite);
+    RUN_TEST_CASE(RingBuffer, EmptyAfterWriteThenRead);
 }
