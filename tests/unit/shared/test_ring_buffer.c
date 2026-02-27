@@ -141,12 +141,46 @@ TEST(RingBuffer, OverflowDoesNotCorruptData)
         ring_buffer_read(&rb, &byte);
         TEST_ASSERT_EQUAL_UINT8(i, byte);
     }
-
 }
 
 /* ================================================================== */
 /*  Tests — wrap-around                                               */
 /* ================================================================== */
+
+TEST(RingBuffer, HandlesWrapAround)
+{
+    /*
+     * Fill half the buffer, drain it, fill again — this forces the
+     * write and read indices to wrap around the backing array.
+     */
+    uint8_t half = BUF_SIZE/2;
+    uint8_t byte;
+
+    // first half
+    for(uint8_t i = 0; i < half; i++) ring_buffer_write(&rb, i);
+    for(uint8_t i = 0; i < half; i++) ring_buffer_read(&rb, &byte);
+
+    // second half
+    for(uint8_t i = 0; i < half; i++) ring_buffer_write(&rb, (uint8_t)(i + 0x10));
+
+
+    for (uint8_t i = 0; i < half; i++)
+    {
+        ring_buffer_read(&rb, &byte);
+        TEST_ASSERT_EQUAL_UINT8((uint8_t)(i + 0x10), byte);
+    }
+}
+
+TEST(RingBuffer, EmptyAfterFullCycleWithWrapAround)
+{
+    uint8_t capacity = BUF_SIZE - 1;
+    uint8_t byte;
+
+    for (uint8_t i = 0; i < capacity; i++) ring_buffer_write(&rb, i);
+    for (uint8_t i = 0; i < capacity; i++) ring_buffer_read(&rb, &byte);
+
+    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
+}
 
 
 /* ================================================================== */
@@ -172,4 +206,6 @@ TEST_GROUP_RUNNER(RingBuffer)
     RUN_TEST_CASE(RingBuffer, OverflowDoesNotCorruptData);
 
     /* Wrap-around*/
+    RUN_TEST_CASE(RingBuffer, HandlesWrapAround);
+    RUN_TEST_CASE(RingBuffer, EmptyAfterFullCycleWithWrapAround);
 }
