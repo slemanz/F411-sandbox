@@ -15,13 +15,6 @@ extern const Comm_Interface_t i2c1_protocol;
 *                     IO INSTANCES                          *
 *************************************************************/
 
-extern const IO_Interface_t io0_pin;
-extern const IO_Interface_t io1_pin;
-extern const IO_Interface_t io2_pin;
-extern const IO_Interface_t io3_pin;
-extern const IO_Interface_t io4_pin;
-extern const IO_Interface_t io5_pin;
-
 /************************************************************
 *                    ADC INSTANCES                          *
 *************************************************************/
