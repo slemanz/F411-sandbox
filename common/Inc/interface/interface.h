@@ -34,22 +34,28 @@ Comm_Interface_t *Comm_ProtocolGet(uint8_t type);
 *                       IO                                  *
 *************************************************************/
 
-typedef struct
+typedef enum
 {
-    void    (*init)(void);
-    void    (*write)(uint8_t value);
-    uint8_t (*read)(void);
-    void    (*toggle)(void);
-    void    (*set_mode)(uint8_t mode);     /**< Switch between IO_MODE_OUTPUT / IO_MODE_INPUT at runtime */
-    void    (*deinit)(void);
-} IO_Interface_t;
+    IO_OK              =  0,   /**< Operação concluída com sucesso       */
+    IO_ERR_NULL        = -1,   /**< Ponteiro nulo recebido               */
+    IO_ERR_INVALID_PIN = -2,   /**< pin_id fora do range configurado     */
+    IO_ERR_NOT_INIT    = -3,   /**< Pino não inicializado                */
+    IO_ERR_HW_FAULT    = -4,   /**< Falha reportada pelo driver GPIO     */
+    IO_ERR_TIMEOUT     = -5,   /**< Timeout numa operação de I/O         */
+}io_status_t;
 
-#define IO_SET              1
-#define IO_RESET            0
-#define IO_MODE_OUTPUT      1
-#define IO_MODE_INPUT       0
+#define IO_PIN_HIGH     ((uint8_t)1u)
+#define IO_PIN_LOW      ((uint8_t)0u)
 
-IO_Interface_t *IO_Interface_get(uint8_t pin);
+#define IO_MODE_OUTPUT  ((uint8_t)0u)
+#define IO_MODE_INPUT   ((uint8_t)1u)
+
+io_status_t IO_init(uint8_t pin_id);
+io_status_t IO_write(uint8_t pin_id, uint8_t value);
+io_status_t IO_read(uint8_t pin_id, uint8_t *out_value);
+io_status_t IO_toggle(uint8_t pin_id);
+io_status_t IO_set_mode(uint8_t pin_id, uint8_t mode);
+io_status_t IO_deinit(uint8_t pin_id);
 
 /************************************************************
 *                       ADC                                 *
