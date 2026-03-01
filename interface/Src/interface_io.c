@@ -30,7 +30,7 @@ typedef struct
     io_status_t (*write)   (uint8_t value);
     io_status_t (*read)    (uint8_t *out_value);
     io_status_t (*toggle)  (void);
-    io_status_t (*set_mode)(uint8_t mode);
+    io_status_t (*configure)(uint8_t option, uint8_t value);
     io_status_t (*deinit)  (void);
 }io_instance_t;
 
@@ -104,15 +104,22 @@ static bool s_pin_is_init(uint32_t mask)
         return IO_OK;                                                            \
     }                                                                            \
                                                                                  \
-    static io_status_t priv_io##IDX##_set_mode(uint8_t mode)                     \
-    {                                                                            \
-        if (!s_pin_is_init(MASK)) {                                              \
-            io_status_t s = priv_io##IDX##_init();                               \
-            if (s != IO_OK) return s;                                            \
-        }                                                                        \
-        GPIO_SetPinMode((PORT), (PIN), mode);                                    \
-        return IO_OK;                                                            \
-    }                                                                            \
+    static io_status_t priv_io##IDX##_configure(uint8_t option, uint8_t value)          \
+    {                                                                                   \
+        if (!s_pin_is_init(MASK)) {                                                     \
+            io_status_t s = priv_io##IDX##_init();                                      \
+            if (s != IO_OK) return s;                                                   \
+        }                                                                               \
+        switch (option)                                                                 \
+        {                                                                               \
+            case IO_OPT_MODE:        GPIO_SetPinMode      ((PORT),(PIN),value); break;  \
+            case IO_OPT_PULL:        GPIO_SetPinPull      ((PORT),(PIN),value); break;  \
+            case IO_OPT_SPEED:       GPIO_SetPinSpeed     ((PORT),(PIN),value); break;  \
+            case IO_OPT_OUTPUT_TYPE: GPIO_SetPinOutputType((PORT),(PIN),value); break;  \
+            default: return IO_ERR_INVALID_PIN;                                         \
+        }                                                                               \
+        return IO_OK;                                                                   \
+    }                                                                                   \
                                                                                  \
     static io_status_t priv_io##IDX##_deinit(void)                               \
     {                                                                            \
@@ -125,7 +132,7 @@ static bool s_pin_is_init(uint32_t mask)
         .write    = priv_io##IDX##_write,                                        \
         .read     = priv_io##IDX##_read,                                         \
         .toggle   = priv_io##IDX##_toggle,                                       \
-        .set_mode = priv_io##IDX##_set_mode,                                     \
+        .configure = priv_io##IDX##_configure,                                   \
         .deinit   = priv_io##IDX##_deinit,                                       \
     }
 
@@ -194,11 +201,11 @@ io_status_t IO_toggle(uint8_t pin_id)
     return io->toggle();
 }
 
-io_status_t IO_set_mode(uint8_t pin_id, uint8_t mode)
+io_status_t IO_configure(uint8_t pin_id, uint8_t option, uint8_t value)
 {
     const io_instance_t *io = io_dispatch(pin_id);
     if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->set_mode(mode);
+    return io->configure(option, value);
 }
 
 io_status_t IO_deinit(uint8_t pin_id)
