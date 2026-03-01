@@ -8,12 +8,8 @@
 *                       TIMEBASE                            *
 *************************************************************/
 
-typedef struct {
-    uint64_t (*get)(void);
-    void (*deinit)(void);
-}timebase_interface_t;
-
-timebase_interface_t *timebase_get(void);
+uint64_t timebase_get   (void);
+void     timebase_deinit(void);
 
 /************************************************************
 *                       COMM                                *
@@ -44,17 +40,40 @@ typedef enum
     IO_ERR_TIMEOUT     = -5,   /**< Timeout numa operação de I/O         */
 }io_status_t;
 
+typedef enum
+{
+    IO_OPT_MODE        = 0u,   /**< Direction: input / output / analog / altfn */
+    IO_OPT_PULL        = 1u,   /**< Pull resistor: none / up / down             */
+    IO_OPT_SPEED       = 2u,   /**< Output drive speed                          */
+    IO_OPT_OUTPUT_TYPE = 3u,   /**< Output stage: push-pull / open-drain        */
+} io_option_e;
+
+/* Values for IO_OPT_PULL */
+#define IO_PULL_NONE   ((uint8_t)0u)   
+#define IO_PULL_UP     ((uint8_t)1u)   
+#define IO_PULL_DOWN   ((uint8_t)2u)   
+
+/* Values for IO_OPT_SPEED */
+#define IO_SPEED_LOW    ((uint8_t)0u)  
+#define IO_SPEED_MEDIUM ((uint8_t)1u)  
+#define IO_SPEED_FAST   ((uint8_t)2u)  
+#define IO_SPEED_HIGH   ((uint8_t)3u)  
+
+/* Values for IO_OPT_OUTPUT_TYPE */
+#define IO_OTYPE_PUSH_PULL  ((uint8_t)0u)
+#define IO_OTYPE_OPEN_DRAIN ((uint8_t)1u)
+
 #define IO_PIN_HIGH     ((uint8_t)1u)
 #define IO_PIN_LOW      ((uint8_t)0u)
 
-#define IO_MODE_OUTPUT  ((uint8_t)0u)
-#define IO_MODE_INPUT   ((uint8_t)1u)
+#define IO_MODE_INPUT   ((uint8_t)0u)
+#define IO_MODE_OUTPUT  ((uint8_t)1u)
 
 io_status_t IO_init(uint8_t pin_id);
 io_status_t IO_write(uint8_t pin_id, uint8_t value);
 io_status_t IO_read(uint8_t pin_id, uint8_t *out_value);
 io_status_t IO_toggle(uint8_t pin_id);
-io_status_t IO_set_mode(uint8_t pin_id, uint8_t mode);
+io_status_t IO_configure(uint8_t pin_id, uint8_t option, uint8_t value);
 io_status_t IO_deinit(uint8_t pin_id);
 
 /************************************************************
