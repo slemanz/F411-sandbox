@@ -1,21 +1,17 @@
 #include "core/simple-timer.h"
 #include "interface/interface.h"
 
-static timebase_interface_t *ticks = NULL;
-
 void simple_timer_setup(simple_timer_t *timer, uint64_t wait_time, bool auto_reset)
 {
-    ticks = timebase_get();
-    
     timer->wait_time = wait_time;
     timer->auto_reset = auto_reset;
-    timer->target_time = ticks->get() + wait_time;
+    timer->target_time = timebase_get() + wait_time;
     timer->has_elapsed = false;
 }
 
 bool simple_timer_has_elapsed(simple_timer_t *timer)
 {
-    uint64_t now = ticks->get();
+    uint64_t now = timebase_get();
     bool has_elapsed = (now >= timer->target_time);
 
     if(timer->has_elapsed) return false;
