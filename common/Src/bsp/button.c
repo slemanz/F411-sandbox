@@ -3,23 +3,23 @@
 #include "core/simple-timer.h"
 #include "shared/pool.h"
 
-/*******************************************************************************
- * Private types
- ******************************************************************************/
+/* ================================================================== */
+/*  Internal types                                                     */
+/* ================================================================== */
 
 typedef enum
 {
-    BTN_STATE_IDLE = 0,   /* Pin is inactive (not pressed)                   */
-    BTN_STATE_DEBOUNCE,   /* Pin went active — waiting for debounce window   */
-    BTN_STATE_PRESSED,    /* Debounced press confirmed                        */
-    BTN_STATE_HELD,       /* Hold timer elapsed while still pressed           */
-    BTN_STATE_RELEASE_DB, /* Pin went inactive — waiting for release debounce */
+    BTN_STATE_IDLE       = 0, /* Pin inactive (not pressed)                  */
+    BTN_STATE_DEBOUNCE,       /* Pin went active — waiting for debounce window */
+    BTN_STATE_PRESSED,        /* Debounced press confirmed                    */
+    BTN_STATE_HELD,           /* Hold timer elapsed while still pressed       */
+    BTN_STATE_RELEASE_DB,     /* Pin went inactive — waiting for release debounce */
 } btn_state_e;
 
 struct button_t
 {
     const char     *name;
-    IO_Interface_t *pin;
+    uint8_t         pin_id;
     uint32_t        uuid;
     bool            inverted;
 
@@ -30,75 +30,88 @@ struct button_t
     simple_timer_t  debounce_timer;
     simple_timer_t  hold_timer;
 
-    button_event_e  pending_event;  /* Consumed by button_getEvent()         */
-    bool            is_pressed;     /* Debounced logical state               */
+    button_event_e  pending_event;
+    bool            is_pressed;
 
     buttonPtr_t     next;
 };
 
-static buttonPtr_t btn_header  = NULL;
-static uint32_t    uuid_count  = 1;
+/* ================================================================== */
+/*  List state                                                         */
+/* ================================================================== */
 
-static void btnList_insert(buttonPtr_t btn);
-static void btnList_delete(buttonPtr_t btn);
-static bool btnList_uuidExists(uint32_t uuid);
+static buttonPtr_t s_btn_head    = NULL;
+static uint32_t    s_uuid_count  = 1u;
 
-/*******************************************************************************
- * Helpers
- ******************************************************************************/
+/* ================================================================== */
+/*  Forward declarations                                               */
+/* ================================================================== */
 
-static bool read_pin(buttonPtr_t btn)
+static void btn_list_insert     (buttonPtr_t btn);
+static void btn_list_delete     (buttonPtr_t btn);
+static bool btn_list_uuid_exists(uint32_t uuid);
+
+/* ================================================================== */
+/*  Private helper                                                     */
+/* ================================================================== */
+
+/**
+ * @brief Read the logical (debounce-corrected) pin state.
+ *
+ * Calls IO_read() and applies the inverted flag so the rest of the
+ * state machine always works with an active-high convention.
+ */
+static bool read_pin_active(buttonPtr_t btn)
 {
-    uint8_t raw = btn->pin->read();
-    return btn->inverted ? (raw == 0) : (raw != 0);
+    uint8_t raw = IO_PIN_LOW;
+    IO_read(btn->pin_id, &raw);
+    return btn->inverted ? (raw == IO_PIN_LOW) : (raw == IO_PIN_HIGH);
 }
-/************************************************************
-*                       CREATE                              *
-*************************************************************/
+
+/* ================================================================== */
+/*  Creation                                                           */
+/* ================================================================== */
 
 buttonPtr_t button_create(const char *name,
-                           IO_Interface_t *pin,
-                           uint32_t debounce_ms,
-                           uint32_t hold_time_ms)
+                           uint8_t    pin_id,
+                           uint32_t   debounce_ms,
+                           uint32_t   hold_time_ms)
 {
     buttonPtr_t btn = (buttonPtr_t)poolBig_Allocate();
 
-    if(btn)
-    {
-        btn->name          = name;
-        btn->pin           = pin;
-        btn->inverted      = false;
-        btn->debounce_ms   = debounce_ms;
-        btn->hold_time_ms  = hold_time_ms;
-        btn->state         = BTN_STATE_IDLE;
-        btn->pending_event = BUTTON_EVENT_NONE;
-        btn->is_pressed    = false;
-        btn->next          = NULL;
-
-        while(btnList_uuidExists(uuid_count) == true)
-        {
-            uuid_count++;
-        }
-        btn->uuid = uuid_count++;
-
-        btnList_insert(btn);
-        uprint("*** %s created ***\r\n", btn->name);
-    }
-    else
+    if (btn == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    btn->name          = name;
+    btn->pin_id        = pin_id;
+    btn->inverted      = false;
+    btn->debounce_ms   = debounce_ms;
+    btn->hold_time_ms  = hold_time_ms;
+    btn->state         = BTN_STATE_IDLE;
+    btn->pending_event = BUTTON_EVENT_NONE;
+    btn->is_pressed    = false;
+    btn->next          = NULL;
+
+    while (btn_list_uuid_exists(s_uuid_count))
+        s_uuid_count++;
+    btn->uuid = s_uuid_count++;
+
+    btn_list_insert(btn);
+    uprint("*** %s created ***\r\n", btn->name);
 
     return btn;
 }
 
 buttonPtr_t button_createWithUuid(const char *name,
-                                   IO_Interface_t *pin,
-                                   uint32_t debounce_ms,
-                                   uint32_t hold_time_ms,
-                                   uint32_t uuid)
+                                   uint8_t    pin_id,
+                                   uint32_t   debounce_ms,
+                                   uint32_t   hold_time_ms,
+                                   uint32_t   uuid)
 {
-    if(btnList_uuidExists(uuid))
+    if (btn_list_uuid_exists(uuid))
     {
         uprint("Failed to create %s: UUID %lu already exists\r\n", name, uuid);
         return NULL;
@@ -106,80 +119,73 @@ buttonPtr_t button_createWithUuid(const char *name,
 
     buttonPtr_t btn = (buttonPtr_t)poolBig_Allocate();
 
-    if(btn)
-    {
-        btn->name          = name;
-        btn->pin           = pin;
-        btn->uuid          = uuid;
-        btn->inverted      = false;
-        btn->debounce_ms   = debounce_ms;
-        btn->hold_time_ms  = hold_time_ms;
-        btn->state         = BTN_STATE_IDLE;
-        btn->pending_event = BUTTON_EVENT_NONE;
-        btn->is_pressed    = false;
-        btn->next          = NULL;
-
-        btnList_insert(btn);
-        uprint("*** %s created with UUID %d ***\r\n", btn->name, btn->uuid);
-    }
-    else
+    if (btn == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    btn->name          = name;
+    btn->pin_id        = pin_id;
+    btn->uuid          = uuid;
+    btn->inverted      = false;
+    btn->debounce_ms   = debounce_ms;
+    btn->hold_time_ms  = hold_time_ms;
+    btn->state         = BTN_STATE_IDLE;
+    btn->pending_event = BUTTON_EVENT_NONE;
+    btn->is_pressed    = false;
+    btn->next          = NULL;
+
+    btn_list_insert(btn);
+    uprint("*** %s created with UUID %lu ***\r\n", btn->name, btn->uuid);
 
     return btn;
 }
 
 void button_destroy(buttonPtr_t btn)
 {
-    if(btn == NULL) return;
-
+    if (btn == NULL) return;
     uprint("*** %s destroyed ***\r\n", btn->name);
-    btnList_delete(btn);
+    btn_list_delete(btn);
     poolBig_Free(btn);
 }
 
 buttonPtr_t button_getByUuid(uint32_t uuid)
 {
-    buttonPtr_t current = btn_header;
-
-    while(current != NULL)
+    buttonPtr_t cur = s_btn_head;
+    while (cur != NULL)
     {
-        if(current->uuid == uuid)
-        {
-            return current;
-        }
-        current = current->next;
+        if (cur->uuid == uuid) return cur;
+        cur = cur->next;
     }
-
     return NULL;
 }
 
-/************************************************************
-*                    CONFIGURATION                          *
-*************************************************************/
+/* ================================================================== */
+/*  Configuration                                                      */
+/* ================================================================== */
 
 void button_invertLogic(buttonPtr_t btn)
 {
-    if(btn == NULL) return;
+    if (btn == NULL) return;
     btn->inverted = true;
 }
 
-/************************************************************
-*                    UPDATE/EVENTS                          *
-*************************************************************/
+/* ================================================================== */
+/*  Update / events                                                    */
+/* ================================================================== */
 
 void button_update(buttonPtr_t btn)
 {
-    if(btn == NULL) return;
+    if (btn == NULL) return;
 
-    bool active = read_pin(btn);
+    bool active = read_pin_active(btn);
 
-    switch(btn->state)
+    switch (btn->state)
     {
         case BTN_STATE_IDLE:
         {
-            if(active)
+            if (active)
             {
                 simple_timer_setup(&btn->debounce_timer, btn->debounce_ms, false);
                 btn->state = BTN_STATE_DEBOUNCE;
@@ -189,34 +195,32 @@ void button_update(buttonPtr_t btn)
 
         case BTN_STATE_DEBOUNCE:
         {
-            if(!active)
+            if (!active)
             {
                 /* Glitch — bail out before debounce window closes */
                 btn->state = BTN_STATE_IDLE;
             }
-            else if(simple_timer_has_elapsed(&btn->debounce_timer))
+            else if (simple_timer_has_elapsed(&btn->debounce_timer))
             {
                 btn->state         = BTN_STATE_PRESSED;
                 btn->is_pressed    = true;
                 btn->pending_event = BUTTON_EVENT_PRESSED;
 
-                if(btn->hold_time_ms > 0)
-                {
+                if (btn->hold_time_ms > 0u)
                     simple_timer_setup(&btn->hold_timer, btn->hold_time_ms, false);
-                }
             }
             break;
         }
 
         case BTN_STATE_PRESSED:
         {
-            if(!active)
+            if (!active)
             {
                 simple_timer_setup(&btn->debounce_timer, btn->debounce_ms, false);
                 btn->state = BTN_STATE_RELEASE_DB;
             }
-            else if(btn->hold_time_ms > 0 &&
-                    simple_timer_has_elapsed(&btn->hold_timer))
+            else if (btn->hold_time_ms > 0u &&
+                     simple_timer_has_elapsed(&btn->hold_timer))
             {
                 btn->state         = BTN_STATE_HELD;
                 btn->pending_event = BUTTON_EVENT_HELD;
@@ -226,7 +230,7 @@ void button_update(buttonPtr_t btn)
 
         case BTN_STATE_HELD:
         {
-            if(!active)
+            if (!active)
             {
                 simple_timer_setup(&btn->debounce_timer, btn->debounce_ms, false);
                 btn->state = BTN_STATE_RELEASE_DB;
@@ -236,12 +240,12 @@ void button_update(buttonPtr_t btn)
 
         case BTN_STATE_RELEASE_DB:
         {
-            if(active)
+            if (active)
             {
                 /* Glitch on release — go back to pressed */
                 btn->state = BTN_STATE_PRESSED;
             }
-            else if(simple_timer_has_elapsed(&btn->debounce_timer))
+            else if (simple_timer_has_elapsed(&btn->debounce_timer))
             {
                 btn->state         = BTN_STATE_IDLE;
                 btn->is_pressed    = false;
@@ -256,105 +260,72 @@ void button_update(buttonPtr_t btn)
 
 button_event_e button_getEvent(buttonPtr_t btn)
 {
-    if(btn == NULL) return BUTTON_EVENT_NONE;
+    if (btn == NULL) return BUTTON_EVENT_NONE;
 
-    button_event_e event = btn->pending_event;
-    btn->pending_event   = BUTTON_EVENT_NONE;
-    return event;
+    button_event_e ev  = btn->pending_event;
+    btn->pending_event = BUTTON_EVENT_NONE;
+    return ev;
 }
 
 bool button_isPressed(buttonPtr_t btn)
 {
-    if(btn == NULL) return false;
+    if (btn == NULL) return false;
     return btn->is_pressed;
 }
 
-/************************************************************
-*                       DISPLAY                             *
-*************************************************************/
+/* ================================================================== */
+/*  Diagnostics                                                        */
+/* ================================================================== */
 
 void button_displayInfo(buttonPtr_t btn)
 {
-    if(btn == NULL) return;
-
-    uprint("************************************************************\r\n");
-    uprint("Device name: %s (UUID: %d)\r\n", btn->name, btn->uuid);
-    uprint("************************************************************\r\n");
+    if (btn == NULL) return;
+    uprint("Device: %s | UUID: %lu | pin_id: %u\r\n",
+           btn->name, btn->uuid, btn->pin_id);
 }
 
 void button_displayAll(void)
 {
-    buttonPtr_t current = btn_header;
-    uprint("************************************************************\r\n");
-    while(current != NULL)
+    buttonPtr_t cur = s_btn_head;
+    while (cur != NULL)
     {
-        uprint("Device name: %s (UUID: %d)\r\n", current->name, current->uuid);
-        current = current->next;
-    }
-    uprint("************************************************************\r\n");
-}
-
-/************************************************************
-*                          LIST                             *
-*************************************************************/
-
-static void btnList_insert(buttonPtr_t btn)
-{
-    if(btn_header == NULL)
-    {
-        btn_header = btn;
-        btn->next  = NULL;
-    }
-    else
-    {
-        buttonPtr_t current = btn_header;
-
-        while(current->next != NULL)
-        {
-            current = current->next;
-        }
-
-        current->next = btn;
-        btn->next     = NULL;
+        uprint("  %s (UUID: %lu)\r\n", cur->name, cur->uuid);
+        cur = cur->next;
     }
 }
 
-static void btnList_delete(buttonPtr_t btn)
-{
-    buttonPtr_t current  = btn_header;
-    buttonPtr_t previous = NULL;
+/* ================================================================== */
+/*  List helpers                                                       */
+/* ================================================================== */
 
-    while(current != NULL)
+static void btn_list_insert(buttonPtr_t btn)
+{
+    if (s_btn_head == NULL) { s_btn_head = btn; return; }
+    buttonPtr_t cur = s_btn_head;
+    while (cur->next != NULL) cur = cur->next;
+    cur->next = btn;
+}
+
+static void btn_list_delete(buttonPtr_t btn)
+{
+    buttonPtr_t cur  = s_btn_head;
+    buttonPtr_t prev = NULL;
+    while (cur != NULL)
     {
-        if(current == btn)
+        if (cur == btn)
         {
-            if(previous == NULL)
-            {
-                btn_header = current->next;
-            }
-            else
-            {
-                previous->next = current->next;
-            }
+            if (prev == NULL) s_btn_head = cur->next;
+            else              prev->next = cur->next;
             return;
         }
-
-        previous = current;
-        current  = current->next;
+        prev = cur;
+        cur  = cur->next;
     }
 }
 
-static bool btnList_uuidExists(uint32_t uuid)
+static bool btn_list_uuid_exists(uint32_t uuid)
 {
-    buttonPtr_t current = btn_header;
-
-    while(current != NULL)
-    {
-        if(current->uuid == uuid)
-        {
-            return true;
-        }
-        current = current->next;
-    }
+    buttonPtr_t cur = s_btn_head;
+    while (cur != NULL) { if (cur->uuid == uuid) return true; cur = cur->next; }
     return false;
 }

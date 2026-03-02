@@ -15,45 +15,35 @@ typedef enum
     BUTTON_EVENT_HELD,
 } button_event_e;
 
-/************************************************************
-*                    CREATE/DESTROY                         *
-*************************************************************/
+/* -- creation / destruction ---------------------------------------- */
 
-buttonPtr_t button_create(const char *name,
-                           IO_Interface_t *pin,
-                           uint32_t debounce_ms,
-                           uint32_t hold_time_ms);
+buttonPtr_t    button_create        (const char *name,
+                                     uint8_t     pin_id,
+                                     uint32_t    debounce_ms,
+                                     uint32_t    hold_time_ms);
 
-buttonPtr_t button_createWithUuid(const char *name,
-                                   IO_Interface_t *pin,
-                                   uint32_t debounce_ms,
-                                   uint32_t hold_time_ms,
-                                   uint32_t uuid);
+buttonPtr_t    button_createWithUuid(const char *name,
+                                     uint8_t     pin_id,
+                                     uint32_t    debounce_ms,
+                                     uint32_t    hold_time_ms,
+                                     uint32_t    uuid);
 
-void        button_destroy(buttonPtr_t btn);
+void           button_destroy       (buttonPtr_t btn);
+buttonPtr_t    button_getByUuid     (uint32_t uuid);
 
-buttonPtr_t button_getByUuid(uint32_t uuid);
+/* -- configuration ------------------------------------------------- */
 
-/************************************************************
-*                     CONFIGURATION                         *
-*************************************************************/
+void           button_invertLogic   (buttonPtr_t btn);
 
-void button_invertLogic(buttonPtr_t btn);
+/* -- update / events ----------------------------------------------- */
 
-/************************************************************
-*                      UPDATE/EVENTS                        *
-*************************************************************/
+void           button_update        (buttonPtr_t btn);
+button_event_e button_getEvent      (buttonPtr_t btn);
+bool           button_isPressed     (buttonPtr_t btn);
 
-void button_update(buttonPtr_t btn);
-button_event_e button_getEvent(buttonPtr_t btn);
-bool button_isPressed(buttonPtr_t btn);
+/* -- diagnostics --------------------------------------------------- */
 
-/************************************************************
-*                        DISPLAY                            *
-*************************************************************/
-
-void button_displayInfo(buttonPtr_t btn);
-void button_displayAll(void);
-
+void           button_displayInfo   (buttonPtr_t btn);
+void           button_displayAll    (void);
 
 #endif /* INC_BUTTON_H_ */
