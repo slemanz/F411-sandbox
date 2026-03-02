@@ -5,45 +5,37 @@
 #include <stdbool.h>
 #include "interface/interface.h"
 
-/************************************************************
-*                          LED                              *
-*************************************************************/
+/* ================================================================== */
+/*  Single-colour LED                                                 */
+/* ================================================================== */
 
 typedef struct led_t* ledPtr_t;
 
-/************************************************************
-*                    CREATE/DESTROY                         *
-*************************************************************/
+/* -- creation / destruction ---------------------------------------- */
 
-ledPtr_t led_create(const char *name, IO_Interface_t *io_pin);
-ledPtr_t led_createWithUuid(const char *name, IO_Interface_t *io_pin, uint32_t uuid);
-ledPtr_t led_getByUuid(uint32_t uuid);
-void led_destroy(ledPtr_t led);
+ledPtr_t    led_create        (const char *name, uint8_t pin_id);
+ledPtr_t    led_createWithUuid(const char *name, uint8_t pin_id, uint32_t uuid);
+ledPtr_t    led_getByUuid     (uint32_t uuid);
+void        led_destroy       (ledPtr_t led);
 
-/************************************************************
-*                     CONFIGURATION                         *
-*************************************************************/
+/* -- configuration ------------------------------------------------- */
 
-void led_invertLogic(ledPtr_t led);
+io_status_t led_invertLogic   (ledPtr_t led);
 
-/************************************************************
-*                        CONTROL                            *
-*************************************************************/
+/* -- control ------------------------------------------------------- */
 
-void led_turn_on(ledPtr_t led);
-void led_turn_off(ledPtr_t led);
-void led_toggle(ledPtr_t led);
+io_status_t led_turn_on       (ledPtr_t led);
+io_status_t led_turn_off      (ledPtr_t led);
+io_status_t led_toggle        (ledPtr_t led);
 
-/************************************************************
-*                        DISPLAY                            *
-*************************************************************/
+/* -- diagnostics --------------------------------------------------- */
 
-void led_displayInfo(ledPtr_t led);
-void led_displayAll(void);
+void        led_displayInfo   (ledPtr_t led);
+void        led_displayAll    (void);
 
-/************************************************************
-*                      LED RGB                              *
-*************************************************************/
+/* ================================================================== */
+/*  RGB LED                                                            */
+/* ================================================================== */
 
 typedef struct led_rgb_t *ledRgbPtr_t;
 
@@ -59,47 +51,37 @@ typedef enum
     LED_RGB_COLOR_WHITE,
 } led_rgb_color_e;
 
-/************************************************************
-*                    CREATE/DESTROY                         *
-*************************************************************/
+/* -- creation / destruction ---------------------------------------- */
 
-ledRgbPtr_t led_rgb_create(const char *name,
-                            IO_Interface_t *pin_r,
-                            IO_Interface_t *pin_g,
-                            IO_Interface_t *pin_b);
+ledRgbPtr_t led_rgb_create        (const char *name,
+                                    uint8_t pin_r,
+                                    uint8_t pin_g,
+                                    uint8_t pin_b);
 
 ledRgbPtr_t led_rgb_createWithUuid(const char *name,
-                                    IO_Interface_t *pin_r,
-                                    IO_Interface_t *pin_g,
-                                    IO_Interface_t *pin_b,
+                                    uint8_t pin_r,
+                                    uint8_t pin_g,
+                                    uint8_t pin_b,
                                     uint8_t uuid);
 
-void        led_rgb_destroy(ledRgbPtr_t led);
+void        led_rgb_destroy       (ledRgbPtr_t led);
+ledRgbPtr_t led_rgb_getByUuid     (uint8_t uuid);
 
-ledRgbPtr_t led_rgb_getByUuid(uint8_t uuid);
+/* -- configuration ------------------------------------------------- */
 
-/************************************************************
-*                     CONFIGURATION                         *
-*************************************************************/
+io_status_t led_rgb_invertLogic   (ledRgbPtr_t led);
 
-void led_rgb_invertLogic(ledRgbPtr_t led);
+/* -- control ------------------------------------------------------- */
 
-/************************************************************
-*                        CONTROL                            *
-*************************************************************/
+io_status_t         led_rgb_set     (ledRgbPtr_t led, led_rgb_color_e color);
+io_status_t         led_rgb_setRaw  (ledRgbPtr_t led, bool r, bool g, bool b);
+io_status_t         led_rgb_off     (ledRgbPtr_t led);
+io_status_t         led_rgb_toggle  (ledRgbPtr_t led, led_rgb_color_e color);
+led_rgb_color_e     led_rgb_getColor(ledRgbPtr_t led);
 
-void led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color);
-void led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b);
-void led_rgb_off(ledRgbPtr_t led);
+/* -- diagnostics --------------------------------------------------- */
 
-led_rgb_color_e led_rgb_getColor(ledRgbPtr_t led);
-void led_rgb_toggle(ledRgbPtr_t led, led_rgb_color_e color);
-
-/************************************************************
-*                        DISPLAY                            *
-*************************************************************/
-
-void led_rgb_displayInfo(ledRgbPtr_t led);
-void led_rgb_displayAll(void);
+void        led_rgb_displayInfo   (ledRgbPtr_t led);
+void        led_rgb_displayAll    (void);
 
 #endif /* INC_LED_H_ */

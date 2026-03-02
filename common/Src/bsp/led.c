@@ -2,66 +2,88 @@
 #include "core/uprint.h"
 #include "shared/pool.h"
 
-struct led_t{
+/* ================================================================== */
+/*  Internal structures                                                */
+/* ================================================================== */
+
+struct led_t
+{
     const char *name;
-    IO_Interface_t *pin;
-    uint32_t uuid;
-    bool inverted;
-    ledPtr_t next;
+    uint8_t     pin_id;
+    uint32_t    uuid;
+    bool        inverted;
+    ledPtr_t    next;
 };
 
-ledPtr_t led_header = NULL;
-uint32_t uuid_count = 1;
+struct led_rgb_t
+{
+    const char      *name;
+    uint8_t          pin_r;
+    uint8_t          pin_g;
+    uint8_t          pin_b;
+    uint8_t          uuid;
+    bool             inverted;
+    led_rgb_color_e  current_color;
+    ledRgbPtr_t      next;
+};
 
-static void ledList_insert(ledPtr_t led);
-static void ledList_delete(ledPtr_t led);
-static bool ledList_uuidExists(uint32_t uuid);
+/* ================================================================== */
+/*  Linked list state                                                  */
+/* ================================================================== */
+
+static ledPtr_t    s_led_head       = NULL;
+static uint32_t    s_uuid_count     = 1u;
+
+static ledRgbPtr_t s_led_rgb_head   = NULL;
+static uint8_t     s_uuid_rgb_count = 1u;
 
 
-/************************************************************
-*                       CREATE                              *
-*************************************************************/
+/* ================================================================== */
+/*  Forward declarations                                               */
+/* ================================================================== */
 
-ledPtr_t led_create(const char *name, IO_Interface_t *io_pin)
+static void led_list_insert       (ledPtr_t led);
+static void led_list_delete       (ledPtr_t led);
+static bool led_list_uuid_exists  (uint32_t uuid);
+
+static void rgb_list_insert       (ledRgbPtr_t led);
+static void rgb_list_delete       (ledRgbPtr_t led);
+static bool rgb_list_uuid_exists  (uint8_t uuid);
+
+/* ================================================================== */
+/*  Single LED — creation                                             */
+/* ================================================================== */
+
+ledPtr_t led_create(const char *name, uint8_t pin_id)
 {
     ledPtr_t led = (ledPtr_t)pool_Allocate();
 
-    if(led)
-    {
-        led->name = name;
-        led->pin = io_pin;
-        led->inverted = false;
-        led->next = NULL;
-
-        while(ledList_uuidExists(uuid_count) == true)
-        {
-            uuid_count++;
-        }
-        led->uuid = uuid_count++;
-        
-        ledList_insert(led);
-
-        uprint("*** %s created ***\r\n", led->name);
-    }else
+    if (led == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    led->name     = name;
+    led->pin_id   = pin_id;
+    led->inverted = false;
+    led->next     = NULL;
+
+    while(led_list_uuid_exists(s_uuid_count))
+    {
+        s_uuid_count++;
+    }
+    led->uuid = s_uuid_count++;
+
+    led_list_insert(led);
+    uprint("*** %s created (UUID %lu) ***\r\n", led->name, led->uuid);
 
     return led;
 }
 
-void led_destroy(ledPtr_t led)
+ledPtr_t led_createWithUuid(const char *name, uint8_t pin_id, uint32_t uuid)
 {
-    if(led == NULL) return;
-
-    uprint("*** %s destroyed ***\r\n", led->name);
-    ledList_delete(led);
-    pool_Free(led);
-}
-
-ledPtr_t led_createWithUuid(const char *name, IO_Interface_t *io_pin, uint32_t uuid)
-{
-    if(ledList_uuidExists(uuid))
+    if (led_list_uuid_exists(uuid))
     {
         uprint("Failed to create %s: UUID %lu already exists\r\n", name, uuid);
         return NULL;
@@ -69,245 +91,173 @@ ledPtr_t led_createWithUuid(const char *name, IO_Interface_t *io_pin, uint32_t u
 
     ledPtr_t led = (ledPtr_t)pool_Allocate();
 
-    if(led)
-    {
-        led->name = name;
-        led->pin = io_pin;
-        led->uuid = uuid;
-        led->inverted = false;
-        led->next = NULL;
-
-        ledList_insert(led);
-        uprint("*** %s created with UUID %d ***\r\n", led->name, led->uuid);
-    }else
+    if (led == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    led->name     = name;
+    led->pin_id   = pin_id;
+    led->uuid     = uuid;
+    led->inverted = false;
+    led->next     = NULL;
+
+    led_list_insert(led);
+    uprint("*** %s created with UUID %lu ***\r\n", led->name, led->uuid);
 
     return led;
 }
 
+void led_destroy(ledPtr_t led)
+{
+    if (led == NULL) return;
+    uprint("*** %s destroyed ***\r\n", led->name);
+    led_list_delete(led);
+    pool_Free(led);
+}
+
 ledPtr_t led_getByUuid(uint32_t uuid)
 {
-    ledPtr_t current = led_header;
-
-    while(current != NULL)
+    ledPtr_t cur = s_led_head;
+    while (cur != NULL)
     {
-        if(current->uuid == uuid)
-        {
-            return current;
-        }
-        current = current->next;
+        if (cur->uuid == uuid) return cur;
+        cur = cur->next;
     }
-
     return NULL;
 }
 
+/* ================================================================== */
+/*  Single LED — configuration                                        */
+/* ================================================================== */
 
-/************************************************************
-*                       CONTROL                             *
-*************************************************************/
-
-void led_turn_on(ledPtr_t led)
+io_status_t led_invertLogic(ledPtr_t led)
 {
-    if(led == NULL) return;
-
-    uint8_t state = led->inverted ? 0 : 1;
-    led->pin->write(state);
-}
-
-void led_turn_off(ledPtr_t led)
-{
-    if(led == NULL) return;
-
-    uint8_t state = led->inverted ? 1 : 0;
-    led->pin->write(state);
-}
-
-void led_toggle(ledPtr_t led)
-{
-    if(led == NULL) return;
-
-    led->pin->toggle();
-}
-
-void led_invertLogic(ledPtr_t led)
-{
-    if(led == NULL)
-    {
-        return;
-    }
+    if (led == NULL) return IO_ERR_NULL;
     led->inverted = true;
+    return IO_OK;
 }
 
-/************************************************************
-*                       DISPLAY                             *
-*************************************************************/
+/* ================================================================== */
+/*  Single LED — control                                              */
+/* ================================================================== */
+
+io_status_t led_turn_on(ledPtr_t led)
+{
+    if (led == NULL) return IO_ERR_NULL;
+    return IO_write(led->pin_id, led->inverted ? IO_PIN_LOW : IO_PIN_HIGH);
+}
+
+io_status_t led_turn_off(ledPtr_t led)
+{
+    if (led == NULL) return IO_ERR_NULL;
+    return IO_write(led->pin_id, led->inverted ? IO_PIN_HIGH : IO_PIN_LOW);
+}
+
+io_status_t led_toggle(ledPtr_t led)
+{
+    if (led == NULL) return IO_ERR_NULL;
+    return IO_toggle(led->pin_id);
+}
+
+
+/* ================================================================== */
+/*  Single LED — diagnostics                                          */
+/* ================================================================== */
 
 void led_displayInfo(ledPtr_t led)
 {
-    if(led == NULL) return;
-
-    uprint("************************************************************\r\n");
-    uprint("Device name: %s\r\n", led->name);
-    uprint("************************************************************\r\n");
+    if (led == NULL) return;
+    uprint("Device: %s | UUID: %lu | pin_id: %u\r\n",
+           led->name, led->uuid, led->pin_id);
 }
 
 void led_displayAll(void)
 {
-    ledPtr_t current = led_header;
-    uprint("************************************************************\r\n");
-    while(current != NULL)
+    ledPtr_t cur = s_led_head;
+    while (cur != NULL)
     {
-        uprint("Device name: %s (UUID: %d)\r\n", current->name, current->uuid);
-        current = current->next;
-    }
-    uprint("************************************************************\r\n");
-}
-
-/************************************************************
-*                          LIST                             *
-*************************************************************/
-
-static void ledList_insert(ledPtr_t led)
-{
-    if(led_header == NULL)
-    {
-        led_header = led;
-        led->next = NULL;
-    }else
-    {
-        ledPtr_t current = led_header;
-
-        while(current->next != NULL)
-        {
-            current = current->next;
-        }
-
-        current->next = led;
-        led->next = NULL;
+        uprint("  %s (UUID: %lu, pin_id: %u)\r\n",
+               cur->name, cur->uuid, cur->pin_id);
+        cur = cur->next;
     }
 }
 
-static void ledList_delete(ledPtr_t led)
-{
-    ledPtr_t current = led_header;
-    ledPtr_t previous = NULL;
+/* ================================================================== */
+/*  Single LED — list helpers                                         */
+/* ================================================================== */
 
-    while(current != NULL)
+static void led_list_insert(ledPtr_t led)
+{
+    if (s_led_head == NULL) { s_led_head = led; return; }
+    ledPtr_t cur = s_led_head;
+    while (cur->next != NULL) cur = cur->next;
+    cur->next = led;
+}
+
+static void led_list_delete(ledPtr_t led)
+{
+    ledPtr_t cur  = s_led_head;
+    ledPtr_t prev = NULL;
+    while (cur != NULL)
     {
-        if(current == led)
+        if (cur == led)
         {
-            if(previous == NULL)
-            {
-                led_header = current->next;
-            }else
-            {
-                previous->next = current->next;
-            }
+            if (prev == NULL) s_led_head = cur->next;
+            else              prev->next = cur->next;
             return;
         }
-
-        previous = current;
-        current = current->next;
+        prev = cur;
+        cur  = cur->next;
     }
 }
 
-static bool ledList_uuidExists(uint32_t uuid)
+static bool led_list_uuid_exists(uint32_t uuid)
 {
-    ledPtr_t current = led_header;
-    
-    while(current != NULL)
-    {
-        if(current->uuid == uuid)
-        {
-            return true;
-        }
-        current = current->next;
-    }
+    ledPtr_t cur = s_led_head;
+    while (cur != NULL) { if (cur->uuid == uuid) return true; cur = cur->next; }
     return false;
 }
 
-/************************************************************
-*                      LED RGB                              *
-*************************************************************/
-
-struct led_rgb_t
-{
-    const char      *name;
-    IO_Interface_t  *pin_r;
-    IO_Interface_t  *pin_g;
-    IO_Interface_t  *pin_b;
-    uint8_t          uuid;
-    bool             inverted;
-    led_rgb_color_e  current_color;  /* Last color set — used by toggle */
-    ledRgbPtr_t      next;
-};
-
-static ledRgbPtr_t led_rgb_header = NULL;
-static uint8_t    uuid_rgb_count     = 1;
-
-static void ledRgbList_insert(ledRgbPtr_t led);
-static void ledRgbList_delete(ledRgbPtr_t led);
-static bool ledRgbList_uuidExists(uint8_t uuid);
-
-/************************************************************
-*                        HELPERS                            *
-*************************************************************/
-
-static void write_pin(IO_Interface_t *pin, bool state, bool inverted)
-{
-    if(pin == NULL) return;
-
-    uint8_t val = (state ^ inverted) ? 1 : 0;
-    pin->write(val);
-}
-
-/************************************************************
-*                    CREATE/DESTROY                         *
-*************************************************************/
+/* ================================================================== */
+/*  RGB LED — creation                                                */
+/* ================================================================== */
 
 ledRgbPtr_t led_rgb_create(const char *name,
-                            IO_Interface_t *pin_r,
-                            IO_Interface_t *pin_g,
-                            IO_Interface_t *pin_b)
+                            uint8_t pin_r, uint8_t pin_g, uint8_t pin_b)
 {
     ledRgbPtr_t led = (ledRgbPtr_t)pool_Allocate();
 
-    if(led)
-    {
-        led->name     = name;
-        led->pin_r    = pin_r;
-        led->pin_g    = pin_g;
-        led->pin_b    = pin_b;
-        led->inverted = false;
-        led->next     = NULL;
-
-        while(ledRgbList_uuidExists(uuid_rgb_count) == true)
-        {
-            uuid_rgb_count++;
-        }
-        led->uuid = uuid_rgb_count++;
-
-        ledRgbList_insert(led);
-
-        uprint("*** %s created ***\r\n", led->name);
-    }
-    else
+    if (led == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    led->name          = name;
+    led->pin_r         = pin_r;
+    led->pin_g         = pin_g;
+    led->pin_b         = pin_b;
+    led->inverted      = false;
+    led->current_color = LED_RGB_COLOR_OFF;
+    led->next          = NULL;
+
+    while (rgb_list_uuid_exists(s_uuid_rgb_count))
+        s_uuid_rgb_count++;
+    led->uuid = s_uuid_rgb_count++;
+
+    rgb_list_insert(led);
+    uprint("*** %s created (UUID %u) ***\r\n", led->name, led->uuid);
 
     return led;
 }
 
 ledRgbPtr_t led_rgb_createWithUuid(const char *name,
-                                    IO_Interface_t *pin_r,
-                                    IO_Interface_t *pin_g,
-                                    IO_Interface_t *pin_b,
+                                    uint8_t pin_r, uint8_t pin_g, uint8_t pin_b,
                                     uint8_t uuid)
 {
-    if(ledRgbList_uuidExists(uuid))
+    if (rgb_list_uuid_exists(uuid))
     {
         uprint("Failed to create %s: UUID %u already exists\r\n", name, uuid);
         return NULL;
@@ -315,72 +265,64 @@ ledRgbPtr_t led_rgb_createWithUuid(const char *name,
 
     ledRgbPtr_t led = (ledRgbPtr_t)pool_Allocate();
 
-    if(led)
-    {
-        led->name     = name;
-        led->pin_r    = pin_r;
-        led->pin_g    = pin_g;
-        led->pin_b    = pin_b;
-        led->uuid     = uuid;
-        led->inverted = false;
-        led->next     = NULL;
-
-        ledRgbList_insert(led);
-        uprint("*** %s created with UUID %d ***\r\n", led->name, led->uuid);
-    }
-    else
+    if (led == NULL)
     {
         uprint("Low memory, cannot create device\r\n");
+        return NULL;
     }
+
+    led->name          = name;
+    led->pin_r         = pin_r;
+    led->pin_g         = pin_g;
+    led->pin_b         = pin_b;
+    led->uuid          = uuid;
+    led->inverted      = false;
+    led->current_color = LED_RGB_COLOR_OFF;
+    led->next          = NULL;
+
+    rgb_list_insert(led);
+    uprint("*** %s created with UUID %u ***\r\n", led->name, led->uuid);
 
     return led;
 }
 
 void led_rgb_destroy(ledRgbPtr_t led)
 {
+    if (led == NULL) return;
     uprint("*** %s destroyed ***\r\n", led->name);
-    ledRgbList_delete(led);
+    rgb_list_delete(led);
     pool_Free(led);
 }
 
 ledRgbPtr_t led_rgb_getByUuid(uint8_t uuid)
 {
-    ledRgbPtr_t current = led_rgb_header;
-
-    while(current != NULL)
-    {
-        if(current->uuid == uuid)
-        {
-            return current;
-        }
-        current = current->next;
-    }
-
+    ledRgbPtr_t cur = s_led_rgb_head;
+    while (cur != NULL) { if (cur->uuid == uuid) return cur; cur = cur->next; }
     return NULL;
 }
 
-/************************************************************
-*                     CONFIGURATION                         *
-*************************************************************/
+/* ================================================================== */
+/*  RGB LED — configuration                                           */
+/* ================================================================== */
 
-void led_rgb_invertLogic(ledRgbPtr_t led)
+io_status_t led_rgb_invertLogic(ledRgbPtr_t led)
 {
-    if(led == NULL) return;
+    if (led == NULL) return IO_ERR_NULL;
     led->inverted = true;
+    return IO_OK;
 }
 
-/************************************************************
-*                        CONTROL                            *
-*************************************************************/
+/* ================================================================== */
+/*  RGB LED — control                                                 */
+/* ================================================================== */
 
-void led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color)
+io_status_t led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color)
 {
-    if(led == NULL) return;
+    if (led == NULL) return IO_ERR_NULL;
 
-    /* Map color enum to R, G, B booleans */
-    bool r = (color == LED_RGB_COLOR_RED    ||
-              color == LED_RGB_COLOR_YELLOW ||
-              color == LED_RGB_COLOR_MAGENTA||
+    bool r = (color == LED_RGB_COLOR_RED     ||
+              color == LED_RGB_COLOR_YELLOW  ||
+              color == LED_RGB_COLOR_MAGENTA ||
               color == LED_RGB_COLOR_WHITE);
 
     bool g = (color == LED_RGB_COLOR_GREEN  ||
@@ -388,146 +330,125 @@ void led_rgb_set(ledRgbPtr_t led, led_rgb_color_e color)
               color == LED_RGB_COLOR_CYAN   ||
               color == LED_RGB_COLOR_WHITE);
 
-    bool b = (color == LED_RGB_COLOR_BLUE   ||
-              color == LED_RGB_COLOR_CYAN   ||
-              color == LED_RGB_COLOR_MAGENTA||
+    bool b = (color == LED_RGB_COLOR_BLUE    ||
+              color == LED_RGB_COLOR_CYAN    ||
+              color == LED_RGB_COLOR_MAGENTA ||
               color == LED_RGB_COLOR_WHITE);
 
-    write_pin(led->pin_r, r, led->inverted);
-    write_pin(led->pin_g, g, led->inverted);
-    write_pin(led->pin_b, b, led->inverted);
+    io_status_t s;
+
+    s = IO_write(led->pin_r, (r ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
+
+    s = IO_write(led->pin_g, (g ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
+
+    s = IO_write(led->pin_b, (b ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
 
     led->current_color = color;
+    return IO_OK;
 }
 
-void led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b)
+io_status_t led_rgb_setRaw(ledRgbPtr_t led, bool r, bool g, bool b)
 {
-    if(led == NULL) return;
+    if (led == NULL) return IO_ERR_NULL;
 
-    write_pin(led->pin_r, r, led->inverted);
-    write_pin(led->pin_g, g, led->inverted);
-    write_pin(led->pin_b, b, led->inverted);
+    io_status_t s;
 
-    /* Best-effort color tracking for setRaw — used by toggle */
+    s = IO_write(led->pin_r, (r ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
+
+    s = IO_write(led->pin_g, (g ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
+
+    s = IO_write(led->pin_b, (b ^ led->inverted) ? IO_PIN_HIGH : IO_PIN_LOW);
+    if (s != IO_OK) return s;
+
     led->current_color = LED_RGB_COLOR_OFF;
-    if( r && !g && !b) led->current_color = LED_RGB_COLOR_RED;
-    if(!r &&  g && !b) led->current_color = LED_RGB_COLOR_GREEN;
-    if(!r && !g &&  b) led->current_color = LED_RGB_COLOR_BLUE;
-    if( r &&  g && !b) led->current_color = LED_RGB_COLOR_YELLOW;
-    if(!r &&  g &&  b) led->current_color = LED_RGB_COLOR_CYAN;
-    if( r && !g &&  b) led->current_color = LED_RGB_COLOR_MAGENTA;
-    if( r &&  g &&  b) led->current_color = LED_RGB_COLOR_WHITE;
+    if ( r && !g && !b) led->current_color = LED_RGB_COLOR_RED;
+    if (!r &&  g && !b) led->current_color = LED_RGB_COLOR_GREEN;
+    if (!r && !g &&  b) led->current_color = LED_RGB_COLOR_BLUE;
+    if ( r &&  g && !b) led->current_color = LED_RGB_COLOR_YELLOW;
+    if (!r &&  g &&  b) led->current_color = LED_RGB_COLOR_CYAN;
+    if ( r && !g &&  b) led->current_color = LED_RGB_COLOR_MAGENTA;
+    if ( r &&  g &&  b) led->current_color = LED_RGB_COLOR_WHITE;
+
+    return IO_OK;
 }
 
-void led_rgb_off(ledRgbPtr_t led)
+io_status_t led_rgb_off(ledRgbPtr_t led)
 {
-    led_rgb_set(led, LED_RGB_COLOR_OFF);
+    return led_rgb_set(led, LED_RGB_COLOR_OFF);
 }
 
 led_rgb_color_e led_rgb_getColor(ledRgbPtr_t led)
 {
-    if(led == NULL) return LED_RGB_COLOR_OFF;
+    if (led == NULL) return LED_RGB_COLOR_OFF;
     return led->current_color;
 }
 
-void led_rgb_toggle(ledRgbPtr_t led, led_rgb_color_e color)
+io_status_t led_rgb_toggle(ledRgbPtr_t led, led_rgb_color_e color)
 {
-    if(led == NULL) return;
-
-    if(led->current_color == LED_RGB_COLOR_OFF)
-    {
-        led_rgb_set(led, color);
-    }
-    else
-    {
-        led_rgb_set(led, LED_RGB_COLOR_OFF);
-    }
+    if (led == NULL) return IO_ERR_NULL;
+    return (led->current_color == LED_RGB_COLOR_OFF)
+        ? led_rgb_set(led, color)
+        : led_rgb_set(led, LED_RGB_COLOR_OFF);
 }
 
-/************************************************************
-*                        DISPLAY                            *
-*************************************************************/
+/* ================================================================== */
+/*  RGB LED — diagnostics                                             */
+/* ================================================================== */
 
 void led_rgb_displayInfo(ledRgbPtr_t led)
 {
-    uprint("************************************************************\r\n");
-    uprint("Device name: %s (UUID: %d)\r\n", led->name, led->uuid);
-    uprint("************************************************************\r\n");
+    if (led == NULL) return;
+    uprint("Device: %s | UUID: %u | pins R:%u G:%u B:%u\r\n",
+           led->name, led->uuid, led->pin_r, led->pin_g, led->pin_b);
 }
 
 void led_rgb_displayAll(void)
 {
-    ledRgbPtr_t current = led_rgb_header;
-    uprint("************************************************************\r\n");
-    while(current != NULL)
+    ledRgbPtr_t cur = s_led_rgb_head;
+    while (cur != NULL)
     {
-        uprint("Device name: %s (UUID: %d)\r\n", current->name, current->uuid);
-        current = current->next;
-    }
-    uprint("************************************************************\r\n");
-}
-
-/************************************************************
-*                          LIST                             *
-*************************************************************/
-
-static void ledRgbList_insert(ledRgbPtr_t led)
-{
-    if(led_rgb_header == NULL)
-    {
-        led_rgb_header = led;
-        led->next = NULL;
-    }
-    else
-    {
-        ledRgbPtr_t current = led_rgb_header;
-
-        while(current->next != NULL)
-        {
-            current = current->next;
-        }
-
-        current->next = led;
-        led->next = NULL;
+        uprint("  %s (UUID: %u)\r\n", cur->name, cur->uuid);
+        cur = cur->next;
     }
 }
 
-static void ledRgbList_delete(ledRgbPtr_t led)
-{
-    ledRgbPtr_t current  = led_rgb_header;
-    ledRgbPtr_t previous = NULL;
+/* ================================================================== */
+/*  RGB LED — list helpers                                            */
+/* ================================================================== */
 
-    while(current != NULL)
+static void rgb_list_insert(ledRgbPtr_t led)
+{
+    if (s_led_rgb_head == NULL) { s_led_rgb_head = led; return; }
+    ledRgbPtr_t cur = s_led_rgb_head;
+    while (cur->next != NULL) cur = cur->next;
+    cur->next = led;
+}
+
+static void rgb_list_delete(ledRgbPtr_t led)
+{
+    ledRgbPtr_t cur  = s_led_rgb_head;
+    ledRgbPtr_t prev = NULL;
+    while (cur != NULL)
     {
-        if(current == led)
+        if (cur == led)
         {
-            if(previous == NULL)
-            {
-                led_rgb_header = current->next;
-            }
-            else
-            {
-                previous->next = current->next;
-            }
+            if (prev == NULL) s_led_rgb_head = cur->next;
+            else              prev->next     = cur->next;
             return;
         }
-
-        previous = current;
-        current  = current->next;
+        prev = cur;
+        cur  = cur->next;
     }
 }
 
-static bool ledRgbList_uuidExists(uint8_t uuid)
+static bool rgb_list_uuid_exists(uint8_t uuid)
 {
-    ledRgbPtr_t current = led_rgb_header;
-
-    while(current != NULL)
-    {
-        if(current->uuid == uuid)
-        {
-            return true;
-        }
-        current = current->next;
-    }
+    ledRgbPtr_t cur = s_led_rgb_head;
+    while (cur != NULL) { if (cur->uuid == uuid) return true; cur = cur->next; }
     return false;
 }
