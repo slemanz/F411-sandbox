@@ -1,64 +1,61 @@
-CC= gcc
-CFLAGS = -c -Wall -std=gnu99 -O0
+CC = gcc
+CXX = g++
+LD = g++
 
-BUILD_DIR 	= build
-ROOT_DIR = ..
-COMMON_DIR = $(ROOT_DIR)/common
+CPPUTEST_HOME ?= /usr
+CPPUTEST_INCLUDE ?= /usr/include
 
-INCLUDES += -I mocks
-INCLUDES += -I framework
-INCLUDES += -I $(COMMON_DIR)/Inc
+CFLAGS   = -c -Wall -Wextra -std=c99   -g 
+CXXFLAGS = -c -Wall -Wextra -std=c++11 -g 
+LDFLAGS  =  -L $(CPPUTEST_HOME)/lib -lCppUTest -lCppUTestExt
 
-PROD 	+= $(BUILD_DIR)/simple-timer.o
-PROD 	+= $(BUILD_DIR)/ring-buffer.o
-PROD 	+= $(BUILD_DIR)/pool.o
+DIR_BUILD 	= build
+DIR_ROOT 	= ..
+DIR_COMMON 	= $(DIR_ROOT)/common
 
-TESTS 	+= $(BUILD_DIR)/AllTestRunner.o
-TESTS 	+= $(BUILD_DIR)/test_simple_timer.o
-TESTS 	+= $(BUILD_DIR)/test_ring_buffer.o
-TESTS 	+= $(BUILD_DIR)/test_pool.o
+INCLUDES += -I .
+INCLUDES += -I $(DIR_COMMON)/Inc
+INCLUDES += -I $(CPPUTEST_INCLUDE)
 
-MOCKS 	+= $(BUILD_DIR)/mock_timebase.o
+PROD 	+= $(DIR_BUILD)/ring-buffer.o
+PROD 	+= $(DIR_BUILD)/simple-timer.o
 
-UNITY 	+= $(BUILD_DIR)/unity_fixture.o
-UNITY 	+= $(BUILD_DIR)/unity.o
+TESTS 	+= $(DIR_BUILD)/AllTestRunner.o
+TESTS 	+= $(DIR_BUILD)/test_ring_buffer.o
+TESTS 	+= $(DIR_BUILD)/test_simple_timer.o
 
-all: $(BUILD_DIR) test
+MOCKS 	+= $(DIR_BUILD)/mock_timebase.o
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+all: $(DIR_BUILD) test
 
-$(BUILD_DIR)/%.o: $(COMMON_DIR)/Src/shared/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(COMMON_DIR)/Src/shared/$(*).c
+$(DIR_BUILD):
+	mkdir -p $(DIR_BUILD)
 
-$(BUILD_DIR)/%.o: $(COMMON_DIR)/Src/core/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(COMMON_DIR)/Src/core/$(*).c
+$(DIR_BUILD)/%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(*).cpp
 
-$(BUILD_DIR)/%.o: $(COMMON_DIR)/Src/bsp/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(COMMON_DIR)/Src/bsp/$(*).c
+$(DIR_BUILD)/%.o: $(DIR_COMMON)/Src/shared/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(DIR_COMMON)/Src/shared/$(*).c
 
-$(BUILD_DIR)/%.o: framework/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o framework/$(*).c
+$(DIR_BUILD)/%.o: $(DIR_COMMON)/Src/core/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(DIR_COMMON)/Src/core/$(*).c
 
-$(BUILD_DIR)/%.o: unit/shared/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o unit/shared/$(*).c
+$(DIR_BUILD)/%.o: $(DIR_COMMON)/Src/shared/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(DIR_COMMON)/Src/shared/$(*).c
 
-$(BUILD_DIR)/%.o: unit/core/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o unit/core/$(*).c
+$(DIR_BUILD)/%.o: mocks/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o mocks/$(*).c
 
-$(BUILD_DIR)/%.o: unit/bsp/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o unit/bsp/$(*).c
+$(DIR_BUILD)/%.o: unit/shared/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o unit/shared/$(*).cpp
 
-$(BUILD_DIR)/%.o: mocks/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o mocks/$(*).c
+$(DIR_BUILD)/%.o: unit/core/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o unit/core/$(*).cpp
 
-$(BUILD_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(*).o $(*).c
-
-test: $(PROD) $(MOCKS) $(UNITY) $(TESTS) 
-	$(CC) $^ -o $(BUILD_DIR)/run_tests
-	./$(BUILD_DIR)/run_tests -v
+test: $(PROD) $(MOCKS) $(TESTS) 
+	$(LD) -o $(DIR_BUILD)/run_tests $^ $(LDFLAGS) 
+	$(DIR_BUILD)/run_tests -v
 
 
 clean:
-	rm -rf $(BUILD_DIR)/*
+	rm -rf $(DIR_BUILD)/*

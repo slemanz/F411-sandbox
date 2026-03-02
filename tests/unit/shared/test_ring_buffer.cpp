@@ -1,8 +1,9 @@
-#include "unity_fixture.h"
+#include "CppUTest/TestHarness.h"
+
+extern "C"
+{
 #include "shared/ring-buffer.h"
-
-TEST_GROUP(RingBuffer);
-
+}
 /*
  * ring_buffer_setup() requires that size is a power of two because the
  * implementation uses a bitmask. All test buffers follow this rule.
@@ -10,17 +11,18 @@ TEST_GROUP(RingBuffer);
 
 #define BUF_SIZE    8   /* power of two */
 
-static ring_buffer_t rb;
-static uint8_t       backing[BUF_SIZE];
-
-TEST_SETUP(RingBuffer)
+TEST_GROUP(RingBuffer)
 {
-    ring_buffer_setup(&rb, backing, BUF_SIZE);
-}
+    ring_buffer_t rb;
+    uint8_t       backing[BUF_SIZE];
 
-TEST_TEAR_DOWN(RingBuffer)
-{
-}
+    void setup()
+    {
+        ring_buffer_setup(&rb, backing, BUF_SIZE);
+    }
+
+    void teardown() {}
+};
 
 /* ================================================================== */
 /*  Tests — initial state                                             */
@@ -28,13 +30,13 @@ TEST_TEAR_DOWN(RingBuffer)
 
 TEST(RingBuffer, IsEmptyAfterSetup)
 {
-    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
+    CHECK(ring_buffer_empty(&rb));
 }
 
 TEST(RingBuffer, ReadFromEmptyReturnsFalse)
 {
     uint8_t byte;
-    TEST_ASSERT_FALSE(ring_buffer_read(&rb, &byte));
+    CHECK_FALSE(ring_buffer_read(&rb, &byte));
 }
 
 /* ================================================================== */
@@ -43,7 +45,7 @@ TEST(RingBuffer, ReadFromEmptyReturnsFalse)
 
 TEST(RingBuffer, ReadReturnsTrueWhenNotFull)
 {
-    TEST_ASSERT_TRUE(ring_buffer_write(&rb, 0xAB));
+    CHECK(ring_buffer_write(&rb, 0xABu));
 }
 
 TEST(RingBuffer, ReadReturnsByteWritten)
@@ -51,14 +53,14 @@ TEST(RingBuffer, ReadReturnsByteWritten)
     ring_buffer_write(&rb, 0x42);
 
     uint8_t byte = 0;
-    TEST_ASSERT_TRUE(ring_buffer_read(&rb, &byte));
-    TEST_ASSERT_EQUAL_UINT8(0x42, byte);
+    CHECK(ring_buffer_read(&rb, &byte));
+    BYTES_EQUAL(0x42u, byte);
 }
 
 TEST(RingBuffer, NotEmptyAfterWrite)
 {
     ring_buffer_write(&rb, 0x01);
-    TEST_ASSERT_FALSE(ring_buffer_empty(&rb));
+    CHECK_FALSE(ring_buffer_empty(&rb));
 }
 
 TEST(RingBuffer, EmptyAfterWriteThenRead)
@@ -66,7 +68,7 @@ TEST(RingBuffer, EmptyAfterWriteThenRead)
     uint8_t byte;
     ring_buffer_write(&rb, 0x55);
     ring_buffer_read(&rb, &byte);
-    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
+    CHECK(ring_buffer_empty(&rb));
 }
 
 
@@ -84,9 +86,9 @@ TEST(RingBuffer, PreservesFIFOOrder)
     ring_buffer_read(&rb, &b);
     ring_buffer_read(&rb, &c);
 
-    TEST_ASSERT_EQUAL_UINT8(1, a);
-    TEST_ASSERT_EQUAL_UINT8(2, b);
-    TEST_ASSERT_EQUAL_UINT8(3, c);
+    BYTES_EQUAL(1u, a);
+    BYTES_EQUAL(2u, b);
+    BYTES_EQUAL(3u, c);
 }
 
 /* ================================================================== */
@@ -103,7 +105,7 @@ TEST(RingBuffer, FillsToCapacityMinusOne)
 
     for(uint8_t i = 0; i < capacity; i++)
     {
-        TEST_ASSERT_TRUE(ring_buffer_write(&rb, i));
+        CHECK(ring_buffer_write(&rb, i));
     }
 }
 
@@ -116,7 +118,7 @@ TEST(RingBuffer, WriteReturnsFalseWhenFull)
         ring_buffer_write(&rb, i);
     }
     /* One more write must be rejected */
-    TEST_ASSERT_FALSE(ring_buffer_write(&rb, 0xFF));
+    CHECK_FALSE(ring_buffer_write(&rb, 0xFFu));
 }
 
 
@@ -139,7 +141,7 @@ TEST(RingBuffer, OverflowDoesNotCorruptData)
     {
         uint8_t byte;
         ring_buffer_read(&rb, &byte);
-        TEST_ASSERT_EQUAL_UINT8(i, byte);
+        BYTES_EQUAL(i, byte);
     }
 }
 
@@ -167,7 +169,7 @@ TEST(RingBuffer, HandlesWrapAround)
     for (uint8_t i = 0; i < half; i++)
     {
         ring_buffer_read(&rb, &byte);
-        TEST_ASSERT_EQUAL_UINT8((uint8_t)(i + 0x10), byte);
+        BYTES_EQUAL((uint8_t)(i + 0x10u), byte);
     }
 }
 
@@ -179,33 +181,5 @@ TEST(RingBuffer, EmptyAfterFullCycleWithWrapAround)
     for (uint8_t i = 0; i < capacity; i++) ring_buffer_write(&rb, i);
     for (uint8_t i = 0; i < capacity; i++) ring_buffer_read(&rb, &byte);
 
-    TEST_ASSERT_TRUE(ring_buffer_empty(&rb));
-}
-
-
-/* ================================================================== */
-/*  Test runner                                                       */
-/* ================================================================== */
-
-TEST_GROUP_RUNNER(RingBuffer)
-{
-    /* Initial State */
-    RUN_TEST_CASE(RingBuffer, IsEmptyAfterSetup);
-    RUN_TEST_CASE(RingBuffer, ReadFromEmptyReturnsFalse);
-
-    /* Write / Read */
-    RUN_TEST_CASE(RingBuffer, ReadReturnsTrueWhenNotFull);
-    RUN_TEST_CASE(RingBuffer, ReadReturnsByteWritten);
-    RUN_TEST_CASE(RingBuffer, NotEmptyAfterWrite);
-    RUN_TEST_CASE(RingBuffer, EmptyAfterWriteThenRead);
-    RUN_TEST_CASE(RingBuffer, PreservesFIFOOrder);
-
-    /* Capacity */
-    RUN_TEST_CASE(RingBuffer, FillsToCapacityMinusOne);
-    RUN_TEST_CASE(RingBuffer, WriteReturnsFalseWhenFull);
-    RUN_TEST_CASE(RingBuffer, OverflowDoesNotCorruptData);
-
-    /* Wrap-around*/
-    RUN_TEST_CASE(RingBuffer, HandlesWrapAround);
-    RUN_TEST_CASE(RingBuffer, EmptyAfterFullCycleWithWrapAround);
+    CHECK(ring_buffer_empty(&rb));
 }
