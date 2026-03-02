@@ -99,12 +99,16 @@ typedef struct
 #define GPIO_PIN_ALTFN_6            6
 #define GPIO_PIN_ALTFN_7            7
 
+#define GPIO_PIN_NO_ALTFN           GPIO_PIN_ALTFN_0
+
 
 // GPIO_PIN_ALTFN_SPECIF_FUNCTION
 
 #define PA5_ALTFN_TIM2_CH1			GPIO_PIN_ALTFN_1
 #define PA2_ALTFN_UART2_TX			GPIO_PIN_ALTFN_7
 #define PA3_ALTFN_UART2_RX			GPIO_PIN_ALTFN_7
+
+#define GPIO_OK                     0
 
 
 /********************************************************************************************
@@ -120,7 +124,7 @@ void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi);
 /*
  * Init and De-init
  */
-void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig);
+uint8_t GPIO_Init(GPIO_PinConfig_t *pGPIOConfig);
 void GPIO_Init_table(const GPIO_PinConfig_t *pGPIOConfig, uint32_t Len);
 void GPIO_DeInit(GPIO_RegDef_t *pGPIOx);
 
@@ -132,7 +136,14 @@ uint16_t GPIO_ReadFromInputPort(GPIO_RegDef_t *pGPIOx);
 void GPIO_WriteToOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber, uint8_t Value);
 void GPIO_ToggleOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber);
 
-void     GPIO_SetPinMode(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t mode);
+/*
+ * Runtime configurations
+ */
+void GPIO_SetPinMode      (GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t mode);
+void GPIO_SetPinPull      (GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t pull);
+void GPIO_SetPinSpeed     (GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t speed);
+void GPIO_SetPinOutputType(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t otype);
+
 
 
 #endif /* INC_GPIO_H_ */

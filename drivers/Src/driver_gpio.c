@@ -22,7 +22,7 @@ void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
 	}
 }
 
-void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
+uint8_t GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 {
     // enable clock to the port
     GPIO_PeriClockControl(pGPIOConfig->pGPIOx, ENABLE);
@@ -102,6 +102,8 @@ void GPIO_Init(GPIO_PinConfig_t *pGPIOConfig)
 		// 3. enable the exti interrupt delivery using IMR
 		EXTI->IMR |= (1 << pGPIOConfig->GPIO_PinNumber);
 	}
+
+    return GPIO_OK;
 }
 
 void GPIO_DeInit(GPIO_RegDef_t *pGPIOx)
@@ -164,6 +166,24 @@ void GPIO_ToggleOutputPin(GPIO_RegDef_t *pGPIOx, uint8_t PinNumber)
 
 void GPIO_SetPinMode(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t mode)
 {
-    pGPIOx->MODER &= ~(0x3U << (2U * pinNumber));
-    pGPIOx->MODER |=  ((mode & 0x3U) << (2U * pinNumber));
+    pGPIOx->MODER &= ~(0x3u << (2u * pinNumber));
+    pGPIOx->MODER |=  ((mode & 0x3u) << (2u * pinNumber));
+}
+
+void GPIO_SetPinPull(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t pull)
+{
+    pGPIOx->PUPDR &= ~(0x3u << (2u * pinNumber));
+    pGPIOx->PUPDR |=  ((pull & 0x3u) << (2u * pinNumber));
+}
+
+void GPIO_SetPinSpeed(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t speed)
+{
+    pGPIOx->OSPEEDR &= ~(0x3u << (2u * pinNumber));
+    pGPIOx->OSPEEDR |=  ((speed & 0x3u) << (2u * pinNumber));
+}
+
+void GPIO_SetPinOutputType(GPIO_RegDef_t *pGPIOx, uint8_t pinNumber, uint8_t otype)
+{
+    pGPIOx->OTYPER &= ~(0x1u << pinNumber);
+    pGPIOx->OTYPER |=  ((otype & 0x1u) << pinNumber);
 }
