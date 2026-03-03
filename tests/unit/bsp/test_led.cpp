@@ -125,3 +125,51 @@ TEST(Led, Toggle_CalledTwice_ExpectsTwoCalls)
     led_toggle(led);
     led_toggle(led);
 }
+
+TEST(Led, TurnOn_NullLed_ReturnsError)
+{
+    LONGS_EQUAL(IO_ERR_NULL, led_turn_on(NULL));
+}
+
+TEST(Led, TurnOff_NullLed_ReturnsError)
+{
+    LONGS_EQUAL(IO_ERR_NULL, led_turn_off(NULL));
+}
+
+TEST(Led, Toggle_NullLed_ReturnsError)
+{
+    LONGS_EQUAL(IO_ERR_NULL, led_toggle(NULL));
+}
+
+/* ---- inverted logic --------------------------------------------- */
+
+TEST(Led, Inverted_TurnOn_WritesLow)
+{
+    led = led_create("L", PIN_A);
+    led_invertLogic(led);
+    expect_write(PIN_A, IO_PIN_LOW);
+
+    LONGS_EQUAL(IO_OK, led_turn_on(led));
+}
+
+TEST(Led, Inverted_TurnOff_WritesHigh)
+{
+    led = led_create("L", PIN_A);
+    led_invertLogic(led);
+    expect_write(PIN_A, IO_PIN_HIGH);
+
+    LONGS_EQUAL(IO_OK, led_turn_off(led));
+}
+
+/* ---- driver error propagation ----------------------------------- */
+
+TEST(Led, TurnOn_DriverFault_Propagates)
+{
+    led = led_create("L", PIN_A);
+    mock_c()->expectOneCall("IO_write")
+             ->withUnsignedIntParameters("pin_id", PIN_A)
+             ->withUnsignedIntParameters("value",  IO_PIN_HIGH)
+             ->andReturnIntValue(IO_ERR_HW_FAULT);
+
+    LONGS_EQUAL(IO_ERR_HW_FAULT, led_turn_on(led));
+}

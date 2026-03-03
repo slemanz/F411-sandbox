@@ -11,7 +11,7 @@
     ],
     "settings": {
         "C_Cpp.default.includePath": [
-            "${workspaceFolder:tests}/framework",
+            "${workspaceFolder:tests}",
             "${workspaceFolder:tests}/mocks",
             "${workspaceFolder:common}/Inc",
         ],
