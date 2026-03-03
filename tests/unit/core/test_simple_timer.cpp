@@ -141,3 +141,75 @@ TEST(SimpleTimer, TimerStartedInTheFutureDoesNotElapse)
     mock_timebase_advance(499); CHECK_FALSE(simple_timer_has_elapsed(&t));
     mock_timebase_advance(1);   CHECK(simple_timer_has_elapsed(&t));
 }
+
+TEST_GROUP(SimpleTimerMock)
+{
+    void setup()
+    {
+        mock_timebase_reset();
+    }
+
+    void teardown()
+    {
+        mock_c()->checkExpectations();
+        mock_c()->clear();
+    }
+
+    /* Declare N expected TIMEBASE_get() calls */
+    void expect_ticks(int n)
+    {
+        for (int i = 0; i < n; i++)
+            mock_c()->expectOneCall("timebase_get");
+    }
+};
+
+TEST(SimpleTimerMock, SetupCallsTimebaseOnce)
+{
+    /*
+     * simple_timer_setup() must read the clock exactly once to
+     * record the start time (deadline = now + wait_ms).
+     */
+    expect_ticks(1);
+    simple_timer_t t;
+    simple_timer_setup(&t, 100u, false);
+}
+
+TEST(SimpleTimerMock, HasElapsedCallsTimebaseOnce)
+{
+    expect_ticks(2);
+    simple_timer_t t;
+    simple_timer_setup(&t, 100u, false);
+    simple_timer_has_elapsed(&t);
+}
+
+TEST(SimpleTimerMock, ResetCallsTimebaseOnce)
+{
+    expect_ticks(1);   /* setup */
+    mock_timebase_advance(100u);
+
+    simple_timer_t t;
+    simple_timer_setup(&t, 100u, false);
+
+    expect_ticks(1);   /* first has_elapsed — fires */
+    simple_timer_has_elapsed(&t);
+
+    expect_ticks(1);   /* reset reads new start time */
+    simple_timer_reset(&t);
+}
+
+TEST(SimpleTimerMock, AutoResetEachPeriodCallsTimebaseOnce)
+{
+    expect_ticks(1);   /* setup */
+    simple_timer_t t;
+    simple_timer_setup(&t, 50u, true);
+
+    /* Period 1 */
+    mock_timebase_advance(50u);
+    expect_ticks(1);   /* fires + reloads */
+    simple_timer_has_elapsed(&t);
+
+    /* Period 2 */
+    mock_timebase_advance(50u);
+    expect_ticks(1);   /* fires + reloads */
+    simple_timer_has_elapsed(&t);
+}
