@@ -64,32 +64,34 @@ void config_core(void)
     cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, COMMANDS_COUNT);
 
     // bsp
-    ledPtr_t led = led_create("Led 1", IO_Interface_get(INTERFACE_IO_0));
+    ledPtr_t led = led_create("Led 1", 0);
     if(led != NULL)
     {
         led_invertLogic(led);
         led_turn_off(led);
     }
 
-    led = led_create("Led Red", IO_Interface_get(INTERFACE_IO_2));
+    led = led_create("Led Red", 2);
     if(led != NULL)
     {
         led_turn_off(led);
     }
 
-    led = led_create("Led Yellow", IO_Interface_get(INTERFACE_IO_3));
+    led = led_create("Led Yellow", 3);
     if(led != NULL)
     {
         led_turn_off(led);
     }
 
-    led = led_create("Led Green", IO_Interface_get(INTERFACE_IO_4));
+    led = led_create("Led Green", 4);
     if(led != NULL)
     {
         led_turn_off(led);
     }
 
-    buttonPtr_t button = button_create("Button", IO_Interface_get(INTERFACE_IO_5), 10, 500);
+    IO_configure(5, IO_OPT_MODE, IO_MODE_INPUT);
+    IO_configure(5, IO_OPT_PULL, IO_PULL_UP);
+    buttonPtr_t button = button_create("Button", 5, 10, 500);
     if(button != NULL)
     {
         button_invertLogic(button);
@@ -131,13 +133,13 @@ static bool detect_overcurrent_output1(void)
 
 static void action_overcurrent_output1(void)
 {
-    led_turn_on(led_getByUuid(3));
+    led_turn_on(led_getByUuid(4));
     uprint("[APP] Output 1 disabled due to overcurrent.\r\n");
 }
 
 static void recover_overcurrent_output1(void)
 {
-    led_turn_off(led_getByUuid(3));
+    led_turn_off(led_getByUuid(4));
     uprint("[APP] Output 1 re-enabled after cooldown.\r\n");
 }
 
