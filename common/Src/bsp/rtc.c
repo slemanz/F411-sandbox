@@ -1,6 +1,6 @@
 #include "bsp/rtc.h"
 
-Comm_Interface_t *rtc_comm = NULL;
+uint8_t rtc_comm_id = 0;
 
 static void rtc_write(uint8_t value, uint8_t reg_addr);
 static uint8_t rtc_read(uint8_t reg_addr);
@@ -36,9 +36,9 @@ uint8_t bcd_to_binary(uint8_t value)
 
 
 
-void rtc_setup(Comm_Interface_t *comm_protocol)
+void rtc_setup(uint8_t comm_id)
 {
-    rtc_comm = comm_protocol;
+    rtc_comm_id = comm_id;
 }
 
 void rtc_set_current_time(RTC_time_t *rtc_time)
@@ -118,23 +118,19 @@ void rtc_get(RTC_DateTime_t *rtc_dateTime)
 
 static void rtc_write(uint8_t value, uint8_t reg_addr)
 {
-    if(rtc_comm == NULL) return; 
-
     uint8_t write_buffer[3] = {DS3231_I2C_ADDRESS, reg_addr, value};
 
-    rtc_comm->send(write_buffer, 3);
+    comm_send(rtc_comm_id, write_buffer, 3);
 }
 
 static uint8_t rtc_read(uint8_t reg_addr)
 {
-    if(rtc_comm == NULL) return 0; 
-
     uint8_t write_buffer[2] = {DS3231_I2C_ADDRESS, reg_addr};
     uint8_t read_buffer;
 
-    rtc_comm->send(write_buffer, 2);
-    rtc_comm->send(write_buffer, 1); // read
-    rtc_comm->receive(&read_buffer, 1);
+    comm_send(rtc_comm_id, write_buffer, 2);
+    comm_send(rtc_comm_id, write_buffer, 1);
+    comm_receive(rtc_comm_id, &read_buffer, 1);
 
     return read_buffer;
 

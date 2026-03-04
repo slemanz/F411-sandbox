@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include "interface/interface.h"
 
-void uprint_setup(Comm_Interface_t *comm);
+void uprint_setup(uint8_t comm_id);
 void uprint(const char *fmt, ...);
 
 #endif /* INC_UPRINT_H_ */

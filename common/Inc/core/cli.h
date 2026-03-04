@@ -12,7 +12,7 @@ typedef struct
     const char *help;
 }command_t;
 
-void cli_setup(Comm_Interface_t *comm, command_t *table, uint32_t Len);
+void cli_setup(uint8_t comm_id, command_t *table, uint32_t Len);
 void cli_update(void);
 void cli_dispatch(char *buffer);
 

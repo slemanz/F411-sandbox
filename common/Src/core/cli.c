@@ -6,18 +6,18 @@
 
 #define CLI_BUFFER_SIZE         64
 
-static Comm_Interface_t *cli_comm = NULL;
+static uint8_t cli_comm_id = 0;
 static command_t *cli_table = NULL;
 static uint32_t cli_table_len = 0;
 
 static char cli_buffer[CLI_BUFFER_SIZE];
 static uint32_t cli_idx = 0;
 
-void cli_setup(Comm_Interface_t *comm, command_t *table, uint32_t Len)
+void cli_setup(uint8_t comm_id, command_t *table, uint32_t Len)
 {
     if(table != NULL)
     {
-        cli_comm = comm;
+        cli_comm_id = comm_id;
         cli_table = table;
         cli_table_len = Len;
     }
@@ -42,18 +42,16 @@ void cli_dispatch(char *buffer)
 
 void cli_update(void)
 {
-    if(cli_comm == NULL) return;
-
-    while(cli_comm->data_available())
+    while(comm_data_available(cli_comm_id))
     {
         uint8_t ch;
-        cli_comm->receive(&ch, 1);
-        cli_comm->send(&ch, 1);
+        comm_receive(cli_comm_id, &ch, 1);
+        comm_send(cli_comm_id, &ch, 1);
 
         if(ch == '\r')
         {
             ch = '\n';
-            cli_comm->send(&ch, 1);
+            comm_send(cli_comm_id, &ch, 1);
         }
 
         if(ch == '\n')

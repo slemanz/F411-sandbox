@@ -56,7 +56,7 @@ typedef struct
 uint8_t binary_to_bcd(uint8_t value);
 uint8_t bcd_to_binary(uint8_t value);
 
-void rtc_setup(Comm_Interface_t *comm_protocol);
+void rtc_setup(uint8_t comm_id);
 
 void rtc_set_current_time(RTC_time_t *rtc_time);
 void rtc_get_current_time(RTC_time_t *rtc_time);

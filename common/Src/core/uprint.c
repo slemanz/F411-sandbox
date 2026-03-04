@@ -1,10 +1,10 @@
 #include "core/uprint.h"
 
-static Comm_Interface_t *uprint_comm = NULL;
+static uint8_t s_comm_id = 0;
 
 static void uprint_send(char c)
 {
-    uprint_comm->send((uint8_t *)&c, 1);
+    comm_send(s_comm_id, (uint8_t*)&c, 1);
 }
 
 static void uprint_puts(const char *s)
@@ -46,15 +46,13 @@ static void uprint_puti(int32_t n)
     uprint_putu((uint32_t)n, 10);
 }
 
-void uprint_setup(Comm_Interface_t *comm)
+void uprint_setup(uint8_t comm_id)
 {
-    uprint_comm = comm;
+    s_comm_id = comm_id;
 }
 
 void uprint(const char *fmt, ...)
 {
-    if(uprint_comm == NULL) return;
-
     va_list args;
     va_start(args, fmt);
     while(*fmt)
