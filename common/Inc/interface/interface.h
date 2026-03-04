@@ -15,16 +15,11 @@ void     timebase_deinit(void);
 *                       COMM                                *
 *************************************************************/
 
-typedef struct
-{
-    void    (*init)(void);
-    void    (*send)(uint8_t *buffer, uint32_t len);
-    uint8_t (*receive)(uint8_t *buffer, uint32_t len);
-    uint8_t (*data_available)(void);
-    void    (*deinit)(void);
-}Comm_Interface_t;
-
-Comm_Interface_t *Comm_ProtocolGet(uint8_t type);
+void    comm_init          (uint8_t comm_id);
+void    comm_send          (uint8_t comm_id, uint8_t *buf, uint32_t len);
+uint8_t comm_receive       (uint8_t comm_id, uint8_t *buf, uint32_t len);
+uint8_t comm_data_available(uint8_t comm_id);
+void    comm_deinit        (uint8_t comm_id);
 
 /************************************************************
 *                       IO                                  *
