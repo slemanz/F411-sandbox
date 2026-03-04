@@ -14,8 +14,8 @@
 *************************************************************/
 
 static ring_buffer_t rb_uart2 = {0U};
-static uint8_t data_buffer_uart2[SERIAL_BUFFER_SIZE] = {0U};
-static uint8_t uart2_is_init = 0;
+static uint8_t       data_buffer_uart2[SERIAL_BUFFER_SIZE] = {0U};
+static uint8_t       uart2_is_init = 0;
 
 void uart2_protocol_init(void)
 {
@@ -100,16 +100,3 @@ void USART2_IRQHandler(void)
         (void)UART2->DR;
     }
 }
-
-
-/************************************************************
-*                     WRAPPER                               *
-*************************************************************/
-
-const Comm_Interface_t uart2_protocol = {
-    .init = uart2_protocol_init,
-    .send = uart2_protocol_send,
-    .receive = uart2_protocol_receive,
-    .data_available = uart2_protocol_data_available,
-    .deinit = NULL
-};

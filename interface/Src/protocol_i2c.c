@@ -73,15 +73,3 @@ uint8_t i2c1_protocol_receive(uint8_t *buffer, uint32_t Len)
 
     return Len;
 }
-
-/************************************************************
-*                     WRAPPER                               *
-*************************************************************/
-
-const Comm_Interface_t i2c1_protocol = {
-    .init = i2c1_protocol_init,
-    .send = i2c1_protocol_send,
-    .receive = i2c1_protocol_receive,
-    .data_available = NULL,
-    .deinit = NULL
-};
