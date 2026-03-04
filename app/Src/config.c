@@ -60,8 +60,8 @@ void config_core(void)
 {
     pool_Init();
     poolBig_Init();
-    uprint_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2));
-    cli_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_UART2), (command_t*)commands_table, COMMANDS_COUNT);
+    uprint_setup(0);
+    cli_setup(0, (command_t*)commands_table, COMMANDS_COUNT);
 
     // bsp
     ledPtr_t led = led_create("Led 1", 0);
@@ -114,7 +114,7 @@ void config_app(void)
 {
     fpu_enable();
     config_core();
-    rtc_setup(Comm_ProtocolGet(INTERFACE_PROTOCOL_I2C1));
+    rtc_setup(1);
     config_fault();
 }
 
