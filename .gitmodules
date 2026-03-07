@@ -1,0 +1,6 @@
+[submodule "external/drivers"]
+	path = external/drivers
+	url = git@github.com:slemanz/stm32f4-bare-drivers.git
+[submodule "external/common"]
+	path = external/common
+	url = git@github.com:slemanz/fw-core-lib.git
