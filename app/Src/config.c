@@ -97,10 +97,10 @@ void config_core(void)
         button_invertLogic(button);
     }
 
-    outputPtr_t out = output_create("Output 1", PWM_Interface_get(INTERFACE_PWM_0));
+    outputPtr_t out = output_create("Output 1", 0);
     if (out != NULL)
     {
-        output_set(out, 30U);
+        output_set(out, 50U);
     }
 }
 

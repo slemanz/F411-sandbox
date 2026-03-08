@@ -11,5 +11,9 @@ $(BUILD_DIR)/Makefile:
 load: all
 	cmake --build $(BUILD_DIR) --target load
 
+test:
+	$(MAKE) -C external/common/Tests
+
 clean:
 	rm -rf $(BUILD_DIR)
+	$(MAKE) -C external/common/Tests clean

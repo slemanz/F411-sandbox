@@ -9,3 +9,6 @@ build
 *.o
 run_tests
 run_tests.exe
+
+*.md
+!README.md
