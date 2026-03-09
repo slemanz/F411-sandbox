@@ -195,14 +195,7 @@ static void cmd_outputs(void)
 
 static void cmd_adc(void)
 {
-    ADC_Interface_t *adc = ADC_Interface_get(INTERFACE_ADC_0);
-    if (adc == NULL)
-    {
-        uprint("[ADC] Interface not available.\r\n");
-        return;
-    }
-
-    uint16_t raw     = adc->read();
+    uint16_t raw     = analog_read(0);
     uint32_t mv      = (raw * 3300UL) / 4095UL;
 
     uprint("ADC0 (PA1): raw=%u  voltage=%u mV\r\n", raw, mv);

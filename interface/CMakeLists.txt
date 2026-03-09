@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 set(INTERFACE_SOURCES
-    Src/interface_adc.c
+    Src/interface_analog.c
     Src/interface_comm.c
     Src/interface_io.c
     Src/interface_pwm.c

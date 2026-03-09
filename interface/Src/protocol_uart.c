@@ -1,6 +1,4 @@
 #include "interface/interface.h"
-#include "interface_instances.h"
-
 #include "shared/ring-buffer.h"
 #include "driver_uart.h"
 #include "driver_gpio.h"
