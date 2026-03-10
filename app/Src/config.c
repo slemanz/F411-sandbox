@@ -133,13 +133,13 @@ static bool detect_overcurrent_output1(void)
 
 static void action_overcurrent_output1(void)
 {
-    led_turn_on(led_getByUuid(4));
+    led_turn_on(led_getByUuid(3));
     uprint("[APP] Output 1 disabled due to overcurrent.\r\n");
 }
 
 static void recover_overcurrent_output1(void)
 {
-    led_turn_off(led_getByUuid(4));
+    led_turn_off(led_getByUuid(3));
     uprint("[APP] Output 1 re-enabled after cooldown.\r\n");
 }
 

@@ -13,8 +13,8 @@
 
 static void task_blinky(void)
 {
-    led_toggle(led_getByUuid(1));
-    led_toggle(led_getByUuid(3));
+    led_toggle(led_getByUuid(0));
+    led_toggle(led_getByUuid(2));
 }
 
 static void task_button(void)
