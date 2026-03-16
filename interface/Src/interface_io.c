@@ -1,216 +1,169 @@
 /**
  * @file interface_io.c
- * @brief Implementation of global IO functions
+ * @brief Data-driven IO implementation
  *
- * The IO_Interface_t (pointer struct) exists ONLY here, as a
- * private implementation detail. No external file knows about it.
- *
- * Call flow (e.g., led.c calls IO_write(pin_id, value)):
- *
- * IO_write(pin_id, value)
- * └─ dispatch(pin_id)         → validates pin_id, returns internal struct
- * └─ instance->write(value) → calls the real GPIO driver
+ * Each pin is described by a config entry in s_pin_configs[].
+ * Generic functions operate on the config — no per-pin code generation.
  *
  * To add a new pin:
- * 1. DEFINE_IO_PIN(IDX, MASK, PORT, PIN)
- * 2. Add &s_ioN to s_io_table[]
- * No public header changes.
+ * 1. Add an entry to s_pin_configs[]
+ * No public header changes needed.
  */
 
 #include "interface/interface.h"
 #include "driver_gpio.h"
 
 /* ------------------------------------------------------------------ */
-/* Internal struct — private to this file                            */
+/* Pin configuration table                                            */
 /* ------------------------------------------------------------------ */
 
 typedef struct
 {
-    io_status_t (*init)    (void);
-    io_status_t (*write)   (uint8_t value);
-    io_status_t (*read)    (uint8_t *out_value);
-    io_status_t (*toggle)  (void);
-    io_status_t (*configure)(uint8_t option, uint8_t value);
-    io_status_t (*deinit)  (void);
-}io_instance_t;
+    GPIO_RegDef_t  *port;
+    uint8_t         pin;
+    uint8_t         default_mode;
+    uint8_t         default_speed;
+    uint8_t         default_otype;
+    uint8_t         default_pupd;
+} io_pin_config_t;
+
+static const io_pin_config_t s_pin_configs[] = {
+/* [pin_id] = { port,  pin,             mode,           speed,          otype,        pupd           } */
+    [0] = { GPIOC, GPIO_PIN_NO_13, GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PC13 */
+    [1] = { GPIOA, GPIO_PIN_NO_5,  GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PA5  */
+    [2] = { GPIOB, GPIO_PIN_NO_3,  GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PB3  */
+    [3] = { GPIOB, GPIO_PIN_NO_4,  GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PB4  */
+    [4] = { GPIOB, GPIO_PIN_NO_5,  GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PB5  */
+    [5] = { GPIOA, GPIO_PIN_NO_0,  GPIO_MODE_OUT, GPIO_SPEED_LOW, GPIO_OP_TYPE_PP, GPIO_NO_PUPD },  /* PA0  */
+};
+
+#define IO_PIN_COUNT  ((uint8_t)(sizeof(s_pin_configs) / sizeof(s_pin_configs[0])))
 
 /* ------------------------------------------------------------------ */
-/* Initialization control (bitmask per pin)                          */
+/* Initialization tracking (bitmask)                                  */
 /* ------------------------------------------------------------------ */
-
-#define IO0_MASK  (1U << 0)
-#define IO1_MASK  (1U << 1)
-#define IO2_MASK  (1U << 2)
-#define IO3_MASK  (1U << 3)
-#define IO4_MASK  (1U << 4)
-#define IO5_MASK  (1U << 5)
 
 static uint32_t s_init_flags = 0u;
 
-static bool s_pin_is_init(uint32_t mask)
+static bool pin_is_init(uint8_t pin_id)
 {
-    return (s_init_flags & mask) != 0u;
+    return (s_init_flags & (1u << pin_id)) != 0u;
+}
+
+static void pin_set_init(uint8_t pin_id)
+{
+    s_init_flags |= (1u << pin_id);
+}
+
+static void pin_clear_init(uint8_t pin_id)
+{
+    s_init_flags &= ~(1u << pin_id);
 }
 
 /* ------------------------------------------------------------------ */
-/* Generation macro — one complete instance per pin                  */
+/* Validation                                                         */
 /* ------------------------------------------------------------------ */
 
-#define DEFINE_IO_PIN(IDX, MASK, PORT, PIN)                                      \
-                                                                                 \
-    static io_status_t priv_io##IDX##_init(void)                                 \
-    {                                                                            \
-        GPIO_PinConfig_t cfg;                                                    \
-        cfg.pGPIOx              = (PORT);                                        \
-        cfg.GPIO_PinNumber      = (PIN);                                         \
-        cfg.GPIO_PinMode        = GPIO_MODE_OUT;                                 \
-        cfg.GPIO_PinSpeed       = GPIO_SPEED_LOW;                                \
-        cfg.GPIO_PinOPType      = GPIO_OP_TYPE_PP;                               \
-        cfg.GPIO_PinPuPdControl = GPIO_NO_PUPD;                              \
-        cfg.GPIO_PinAltFunMode  = GPIO_PIN_NO_ALTFN;                             \
-        if (GPIO_Init(&cfg) != GPIO_OK) return IO_ERR_HW_FAULT;                  \
-        s_init_flags |= (MASK);                                                  \
-        return IO_OK;                                                            \
-    }                                                                            \
-                                                                                 \
-    static io_status_t priv_io##IDX##_write(uint8_t value)                       \
-    {                                                                            \
-        if (!s_pin_is_init(MASK)) {                                              \
-            io_status_t s = priv_io##IDX##_init();                               \
-            if (s != IO_OK) return s;                                            \
-        }                                                                        \
-        GPIO_WriteToOutputPin((PORT), (PIN), value);                             \
-        return IO_OK;                                                            \
-    }                                                                            \
-                                                                                 \
-    static io_status_t priv_io##IDX##_read(uint8_t *out_value)                   \
-    {                                                                            \
-        if (out_value == NULL) return IO_ERR_NULL;                               \
-        if (!s_pin_is_init(MASK)) {                                              \
-            io_status_t s = priv_io##IDX##_init();                               \
-            if (s != IO_OK) return s;                                            \
-        }                                                                        \
-        *out_value = GPIO_ReadFromInputPin((PORT), (PIN));                       \
-        return IO_OK;                                                            \
-    }                                                                            \
-                                                                                 \
-    static io_status_t priv_io##IDX##_toggle(void)                               \
-    {                                                                            \
-        if (!s_pin_is_init(MASK)) {                                              \
-            io_status_t s = priv_io##IDX##_init();                               \
-            if (s != IO_OK) return s;                                            \
-        }                                                                        \
-        GPIO_ToggleOutputPin((PORT), (PIN));                                     \
-        return IO_OK;                                                            \
-    }                                                                            \
-                                                                                 \
-    static io_status_t priv_io##IDX##_configure(uint8_t option, uint8_t value)          \
-    {                                                                                   \
-        if (!s_pin_is_init(MASK)) {                                                     \
-            io_status_t s = priv_io##IDX##_init();                                      \
-            if (s != IO_OK) return s;                                                   \
-        }                                                                               \
-        switch (option)                                                                 \
-        {                                                                               \
-            case IO_OPT_MODE:        GPIO_SetPinMode      ((PORT),(PIN),value); break;  \
-            case IO_OPT_PULL:        GPIO_SetPinPull      ((PORT),(PIN),value); break;  \
-            case IO_OPT_SPEED:       GPIO_SetPinSpeed     ((PORT),(PIN),value); break;  \
-            case IO_OPT_OUTPUT_TYPE: GPIO_SetPinOutputType((PORT),(PIN),value); break;  \
-            default: return IO_ERR_INVALID_PIN;                                         \
-        }                                                                               \
-        return IO_OK;                                                                   \
-    }                                                                                   \
-                                                                                 \
-    static io_status_t priv_io##IDX##_deinit(void)                               \
-    {                                                                            \
-        s_init_flags &= ~(MASK);                                                 \
-        return IO_OK;                                                            \
-    }                                                                            \
-                                                                                 \
-    static const io_instance_t s_io##IDX = {                                     \
-        .init     = priv_io##IDX##_init,                                         \
-        .write    = priv_io##IDX##_write,                                        \
-        .read     = priv_io##IDX##_read,                                         \
-        .toggle   = priv_io##IDX##_toggle,                                       \
-        .configure = priv_io##IDX##_configure,                                   \
-        .deinit   = priv_io##IDX##_deinit,                                       \
-    }
-
-/* ------------------------------------------------------------------ */
-/* Instances — logical → physical mapping                            */
-/* ------------------------------------------------------------------ */
-
-DEFINE_IO_PIN(0, IO0_MASK, GPIOC, GPIO_PIN_NO_13);
-DEFINE_IO_PIN(1, IO1_MASK, GPIOA, GPIO_PIN_NO_5);
-DEFINE_IO_PIN(2, IO2_MASK, GPIOB, GPIO_PIN_NO_3);
-DEFINE_IO_PIN(3, IO3_MASK, GPIOB, GPIO_PIN_NO_4);
-DEFINE_IO_PIN(4, IO4_MASK, GPIOB, GPIO_PIN_NO_5);
-DEFINE_IO_PIN(5, IO5_MASK, GPIOA, GPIO_PIN_NO_0);
-
-/* ------------------------------------------------------------------ */
-/* Dispatch table — only internal "public" data structure            */
-/* ------------------------------------------------------------------ */
-
-static const io_instance_t * const s_io_table[] = {
-    &s_io0,   /* pin_id 0 -> PC13 */
-    &s_io1,   /* pin_id 1 -> PA5  */
-    &s_io2,   /* pin_id 2 -> PB3  */
-    &s_io3,   /* pin_id 3 -> PB4  */
-    &s_io4,   /* pin_id 4 -> PB5  */
-    &s_io5,   /* pin_id 5 -> PA0  */
-};
-
-#define IO_PIN_COUNT  ((uint8_t)(sizeof(s_io_table) / sizeof(s_io_table[0])))
-
-static const io_instance_t *io_dispatch(uint8_t pin_id)
+static const io_pin_config_t *io_get_config(uint8_t pin_id)
 {
     if (pin_id >= IO_PIN_COUNT) return NULL;
-    return s_io_table[pin_id];
+    return &s_pin_configs[pin_id];
+}
+
+/* ------------------------------------------------------------------ */
+/* Internal: lazy-init helper                                         */
+/* ------------------------------------------------------------------ */
+
+static io_status_t io_ensure_init(uint8_t pin_id, const io_pin_config_t *cfg)
+{
+    if (pin_is_init(pin_id)) return IO_OK;
+
+    GPIO_PinConfig_t gpio_cfg;
+    gpio_cfg.pGPIOx              = cfg->port;
+    gpio_cfg.GPIO_PinNumber      = cfg->pin;
+    gpio_cfg.GPIO_PinMode        = cfg->default_mode;
+    gpio_cfg.GPIO_PinSpeed       = cfg->default_speed;
+    gpio_cfg.GPIO_PinOPType      = cfg->default_otype;
+    gpio_cfg.GPIO_PinPuPdControl = cfg->default_pupd;
+    gpio_cfg.GPIO_PinAltFunMode  = GPIO_PIN_NO_ALTFN;
+
+    if (GPIO_Init(&gpio_cfg) != GPIO_OK) return IO_ERR_HW_FAULT;
+
+    pin_set_init(pin_id);
+    return IO_OK;
 }
 
 /* ================================================================== */
-/* Implementation of public functions declared in interface.h        */
+/* Public functions declared in interface.h                           */
 /* ================================================================== */
 
 io_status_t IO_init(uint8_t pin_id)
 {
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->init();
+    const io_pin_config_t *cfg = io_get_config(pin_id);
+    if (cfg == NULL) return IO_ERR_INVALID_PIN;
+    return io_ensure_init(pin_id, cfg);
 }
 
 io_status_t IO_write(uint8_t pin_id, uint8_t value)
 {
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->write(value);
+    const io_pin_config_t *cfg = io_get_config(pin_id);
+    if (cfg == NULL) return IO_ERR_INVALID_PIN;
+
+    io_status_t s = io_ensure_init(pin_id, cfg);
+    if (s != IO_OK) return s;
+
+    GPIO_WriteToOutputPin(cfg->port, cfg->pin, value);
+    return IO_OK;
 }
 
 io_status_t IO_read(uint8_t pin_id, uint8_t *out_value)
 {
     if (out_value == NULL) return IO_ERR_NULL;
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->read(out_value);
+
+    const io_pin_config_t *cfg = io_get_config(pin_id);
+    if (cfg == NULL) return IO_ERR_INVALID_PIN;
+
+    io_status_t s = io_ensure_init(pin_id, cfg);
+    if (s != IO_OK) return s;
+
+    *out_value = GPIO_ReadFromInputPin(cfg->port, cfg->pin);
+    return IO_OK;
 }
 
 io_status_t IO_toggle(uint8_t pin_id)
 {
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->toggle();
+    const io_pin_config_t *cfg = io_get_config(pin_id);
+    if (cfg == NULL) return IO_ERR_INVALID_PIN;
+
+    io_status_t s = io_ensure_init(pin_id, cfg);
+    if (s != IO_OK) return s;
+
+    GPIO_ToggleOutputPin(cfg->port, cfg->pin);
+    return IO_OK;
 }
 
 io_status_t IO_configure(uint8_t pin_id, uint8_t option, uint8_t value)
 {
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->configure(option, value);
+    const io_pin_config_t *cfg = io_get_config(pin_id);
+    if (cfg == NULL) return IO_ERR_INVALID_PIN;
+
+    io_status_t s = io_ensure_init(pin_id, cfg);
+    if (s != IO_OK) return s;
+
+    switch (option)
+    {
+        case IO_OPT_MODE:        GPIO_SetPinMode      (cfg->port, cfg->pin, value); break;
+        case IO_OPT_PULL:        GPIO_SetPinPull      (cfg->port, cfg->pin, value); break;
+        case IO_OPT_SPEED:       GPIO_SetPinSpeed     (cfg->port, cfg->pin, value); break;
+        case IO_OPT_OUTPUT_TYPE: GPIO_SetPinOutputType(cfg->port, cfg->pin, value); break;
+        default: return IO_ERR_INVALID_PIN;
+    }
+    return IO_OK;
 }
 
 io_status_t IO_deinit(uint8_t pin_id)
 {
-    const io_instance_t *io = io_dispatch(pin_id);
-    if (io == NULL) return IO_ERR_INVALID_PIN;
-    return io->deinit();
+    if (pin_id >= IO_PIN_COUNT) return IO_ERR_INVALID_PIN;
+    pin_clear_init(pin_id);
+    return IO_OK;
 }
