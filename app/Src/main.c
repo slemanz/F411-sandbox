@@ -1,4 +1,4 @@
-#include "config.h"
+#include "board_config.h"
 
 #include "core/simple-timer.h"
 #include "core/ticker.h"
@@ -13,13 +13,13 @@
 
 static void task_blinky(void)
 {
-    led_toggle(led_getByUuid(0));
-    led_toggle(led_getByUuid(2));
+    led_toggle(led_getByUuid(BOARD_UUID_LED_ONBOARD));
+    led_toggle(led_getByUuid(BOARD_UUID_LED_RED));
 }
 
 static void task_button(void)
 {
-    button_update(button_getByUuid(1));
+    button_update(button_getByUuid(BOARD_UUID_BUTTON_USER));
 }
 
 static const ticker_task_t app_tasks[] = {

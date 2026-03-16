@@ -1,4 +1,4 @@
-#include "config.h"
+#include "board_config.h"
 
 /************************************************************
 *                       DRIVERS                             *
@@ -60,30 +60,30 @@ void config_core(void)
 {
     pool_Init();
     poolBig_Init();
-    uprint_setup(0);
-    cli_setup(0, (command_t*)commands_table, COMMANDS_COUNT);
+    uprint_setup(BOARD_COMM_SERIAL);
+    cli_setup(BOARD_COMM_SERIAL, (command_t*)commands_table, COMMANDS_COUNT);
 
     // bsp
-    ledPtr_t led = led_create("Led 1", 0);
+    ledPtr_t led = led_createWithUuid("Led Onboard", BOARD_LED_ONBOARD, BOARD_UUID_LED_ONBOARD);
     if(led != NULL)
     {
         led_invertLogic(led);
         led_turn_off(led);
     }
 
-    led = led_create("Led Red", 2);
+    led = led_createWithUuid("Led Red", BOARD_LED_RED, BOARD_UUID_LED_RED);
     if(led != NULL)
     {
         led_turn_off(led);
     }
 
-    led = led_create("Led Yellow", 3);
+    led = led_createWithUuid("Led Yellow", BOARD_LED_YELLOW, BOARD_UUID_LED_YELLOW);
     if(led != NULL)
     {
         led_turn_off(led);
     }
 
-    led = led_create("Led Green", 4);
+    led = led_createWithUuid("Led Green", BOARD_LED_GREEN, BOARD_UUID_LED_GREEN);
     if(led != NULL)
     {
         led_turn_off(led);
@@ -91,13 +91,13 @@ void config_core(void)
 
     IO_configure(5, IO_OPT_MODE, IO_MODE_INPUT);
     IO_configure(5, IO_OPT_PULL, IO_PULL_UP);
-    buttonPtr_t button = button_create("Button", 5, 10, 500);
+    buttonPtr_t button = button_createWithUuid("Button", BOARD_BUTTON_USER, 10, 500, BOARD_UUID_BUTTON_USER);
     if(button != NULL)
     {
         button_invertLogic(button);
     }
 
-    outputPtr_t out = output_create("Output 1", 0);
+    outputPtr_t out = output_createWithUuid("Output 1", BOARD_PWM_OUTPUT1, BOARD_UUID_OUTPUT1);
     if (out != NULL)
     {
         output_set(out, 50U);
@@ -124,7 +124,7 @@ void config_app(void)
 
 static bool detect_overcurrent_output1(void)
 {
-    if(button_isPressed(button_getByUuid(1))) // must be update in main()
+    if(button_isPressed(button_getByUuid(BOARD_UUID_BUTTON_USER)))
     {
         return true;
     }
@@ -133,13 +133,13 @@ static bool detect_overcurrent_output1(void)
 
 static void action_overcurrent_output1(void)
 {
-    led_turn_on(led_getByUuid(3));
+    led_turn_on(led_getByUuid(BOARD_UUID_LED_YELLOW));
     uprint("[APP] Output 1 disabled due to overcurrent.\r\n");
 }
 
 static void recover_overcurrent_output1(void)
 {
-    led_turn_off(led_getByUuid(3));
+    led_turn_off(led_getByUuid(BOARD_UUID_LED_YELLOW));
     uprint("[APP] Output 1 re-enabled after cooldown.\r\n");
 }
 
@@ -195,7 +195,7 @@ static void cmd_outputs(void)
 
 static void cmd_adc(void)
 {
-    uint16_t raw     = analog_read(0);
+    uint16_t raw     = analog_read(BOARD_ADC_CHANNEL0);
     uint32_t mv      = (raw * 3300UL) / 4095UL;
 
     uprint("ADC0 (PA1): raw=%u  voltage=%u mV\r\n", raw, mv);
