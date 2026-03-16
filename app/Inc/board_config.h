@@ -3,6 +3,10 @@
 
 #include "interface_defines.h"
 
+void config_app(void);
+void config_interface(void);
+void config_core(void);
+
 /************************************************************
 *              BOARD PIN MAPPING — STM32F411E               *
 *************************************************************/
