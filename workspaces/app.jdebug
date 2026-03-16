@@ -31,7 +31,7 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
-  File.Open ("$(ProjectDir)/../app/Build/flash.elf");
+  File.Open ("$(ProjectDir)/../build/app/flash.elf");
 }
 
 /*********************************************************************
