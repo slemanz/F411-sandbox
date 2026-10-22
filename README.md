@@ -1,18 +1,8 @@
 # F411 Sandbox
 
-![image breadbord](breadboard.png)
-
-```bash
-mkdir build && cd build
-cmake ..
-make
-
-mkdir build && cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-none-eabi-gcc.cmake ..
-cmake --build .
-```
+![image breadbord](docs/images/breadboard.png)
 
 ---
 
-v1.0 - Uses unity for tests
-v2.0 - Uses submodules for drivers and common
+- v1.0 - Uses unity for tests
+- v2.0 - Uses submodules for drivers and common
