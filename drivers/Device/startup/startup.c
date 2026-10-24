@@ -22,7 +22,7 @@ void __libc_init_array(void);
 
 
 
-/* Functions prototypes of STM32F401 system exceptions and IRQ handlers */
+/* Functions prototypes of STM32F411 system exceptions and IRQ handlers */
 void Reset_Handler(void);
 
 
@@ -89,6 +89,7 @@ void USART6_IRQHandler            	(void) __attribute__ ((weak, alias("Default_H
 void I2C3_EV_IRQHandler           	(void) __attribute__ ((weak, alias("Default_Handler")));
 void I2C3_ER_IRQHandler           	(void) __attribute__ ((weak, alias("Default_Handler")));
 void SPI4_IRQHandler              	(void) __attribute__ ((weak, alias("Default_Handler")));
+void SPI5_IRQHandler              	(void) __attribute__ ((weak, alias("Default_Handler")));
 
 
 __attribute__((section(".isr_vector")))
@@ -193,7 +194,8 @@ uint32_t vectors[]  = {
     0,
     0,
     0,
-    (uint32_t)SPI4_IRQHandler              			
+    (uint32_t)SPI4_IRQHandler,             			
+    (uint32_t)SPI5_IRQHandler              			
 };
 
 void Default_Handler(void)
@@ -228,6 +230,5 @@ void Reset_Handler(void)
     __libc_init_array();
 
     // call main()
-    __asm volatile("MSR MSP, %0": : "r" (STACK_START): ); // stack reset
     main();
 }
