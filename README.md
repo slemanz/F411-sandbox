@@ -6,6 +6,10 @@
 make PROFILE=release
 ```
 
+```bash
+pip install pylink-square
+```
+
 ---
 
 - v1.0 - Uses unity for tests
