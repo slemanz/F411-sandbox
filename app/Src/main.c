@@ -1,44 +1,18 @@
-#include "board_config.h"
+#include "stm32f4xx.h"
 
-#include "core/simple-timer.h"
-#include "core/ticker.h"
-#include "core/cli.h"
-#include "core/uprint.h"
-#include "core/fault.h"
-
-#include "bsp/led.h"
-#include "bsp/rtc.h"
-#include "bsp/button.h"
-
-
-static void task_blinky(void)
+static void delay(volatile uint32_t count)
 {
-    led_toggle(led_getByUuid(BOARD_UUID_LED_ONBOARD));
-    led_toggle(led_getByUuid(BOARD_UUID_LED_RED));
+    while(count--);
 }
-
-static void task_button(void)
-{
-    button_update(button_getByUuid(BOARD_UUID_BUTTON_USER));
-}
-
-static const ticker_task_t app_tasks[] = {
-    TICKER_TASK(task_blinky,  500),
-    TICKER_TASK(task_button,  10),
-};
 
 int main(void)
 {
-    config_app();
-
-    ticker_init(app_tasks, TICKER_TASK_COUNT(app_tasks));
-
-    uprint("Init the board!\r\n");
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+    GPIOC->MODER |= (1U << GPIO_MODER_MODER13_Pos);   /* PC13 output */
 
     while(1)
     {
-        ticker_update();
-        cli_update();
-        fault_update();
+        GPIOC->ODR ^= GPIO_ODR_OD13;
+        delay(500000);
     }
 }

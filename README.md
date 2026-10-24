@@ -1,6 +1,10 @@
 # F411 Sandbox
 
-![image breadbord](docs/images/breadboard.png)
+<!-- ![image breadbord](docs/images/breadboard.png) -->
+
+```bash
+make PROFILE=release
+```
 
 ---
 
