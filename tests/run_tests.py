@@ -18,17 +18,28 @@ def symbol_address_get(elf, name):
             return int(fields[0], 16)
 
     print("Symbol", name, "not found in", elf)
-    sys.exit()
+    sys.exit(1)
 
 def pc_read(jlink):
     for index in jlink.register_list():
         if jlink.register_name(index).startswith("R15"):
             return jlink.register_read(index)
 
+def function_at(elf, address):
+    addr2line = subprocess.run(["arm-none-eabi-addr2line", "-f", "-e", elf, hex(address)],
+                                capture_output=True, text=True, check=True)
+
+    return addr2line.stdout.splitlines()[0]
+
+def mem_string_read(jlink, address):
+    data = bytes(jlink.memory_read8(address, 64))
+    return data.split(b"\0")[0].decode()
+
+
 def main():
     if len(sys.argv) != 2:
         print("Error in use")
-        sys.exit()
+        sys.exit(1)
 
     elf = sys.argv[1]
     results = symbol_address_get(elf, "ttest_results")
@@ -41,7 +52,7 @@ def main():
     jlink.flash_file(elf.replace(".elf", ".bin"), 0x08000000)
 
     jlink.reset(halt=True)
-    jlink.memory_write32(results, [0, 0]) # clear magic/state lef by any previous run
+    jlink.memory_write32(results, [0, 0]) # clear magic/state left by any previous run
     jlink.restart()
 
     deadline = time.time() + TIMEOUT_S
@@ -52,10 +63,19 @@ def main():
         time.sleep(1)
     else:
         jlink.halt()
+        pc = pc_read(jlink)
 
-        print("TIMEOUT: stuck in", hex(pc_read(jlink)))
+        print(f"TIMEOUT: stuck in {function_at(elf, pc)} (pc = 0x{pc:08X})")
+        sys.exit(1)
 
-    print("END")
+    _, _, total, failed, test, file, line, expected, actual = jlink.memory_read32(results, 9)
+
+    if failed:
+        print(f"{mem_string_read(jlink, file)}:{line}: {mem_string_read(jlink, test)}: "
+              f"expected 0x{expected:08X}, got 0x{actual:08X}")
+              
+    print(f"{total} tests, {failed} failed")
+    sys.exit(1 if failed else 0)
 
 
 

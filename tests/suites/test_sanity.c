@@ -7,10 +7,6 @@ static void test_pass(void)
 
 static void test_fail(void)
 {
-    while(1)
-    {
-
-    }
     TEST_ASSERT_EQ(5, 2 + 2);
 }
 
