@@ -4,12 +4,34 @@
  * Private Helpers
  */
 
-/*
- * Pin helper (runtime)
- */
+static uint32_t gpio_clock_bit(GPIO_TypeDef *port)
+{
+    if      (port == GPIOA) return RCC_AHB1ENR_GPIOAEN;
+    else if (port == GPIOB) return RCC_AHB1ENR_GPIOBEN;
+    else if (port == GPIOC) return RCC_AHB1ENR_GPIOCEN;
+    else if (port == GPIOD) return RCC_AHB1ENR_GPIODEN;
+    else if (port == GPIOE) return RCC_AHB1ENR_GPIOEEN;
+    else if (port == GPIOH) return RCC_AHB1ENR_GPIOHEN;
+
+    return 0;
+}
 
 /*
  * Clock control
+ */
+
+void gpio_clock_enable(GPIO_TypeDef *port)
+{
+    RCC->AHB1ENR |= gpio_clock_bit(port);
+}
+
+void gpio_clock_disable(GPIO_TypeDef *port)
+{
+    RCC->AHB1ENR &= ~gpio_clock_bit(port);
+}
+
+/*
+ * Pin helper (runtime)
  */
 
 /*
