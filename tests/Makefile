@@ -29,9 +29,10 @@ OBJS += $(DIR_BUILD)/ttest.o
 OBJS += $(DIR_BUILD)/startup.o
 OBJS += $(DIR_BUILD)/syscalls.o
 
-SUITES += $(DIR_BUILD)/test_sanity.o
+#SUITES += $(DIR_BUILD)/test_sanity.o
+SUITES += $(DIR_BUILD)/test_gpio.o
 
-#DRIVERS += $(DIR_BUILD)/driver_gpio.o
+DRIVERS += $(DIR_BUILD)/driver_gpio.o
 
 PREREQ = $(DIR_BUILD)
 

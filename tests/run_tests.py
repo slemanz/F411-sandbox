@@ -73,7 +73,7 @@ def main():
     if failed:
         print(f"{mem_string_read(jlink, file)}:{line}: {mem_string_read(jlink, test)}: "
               f"expected 0x{expected:08X}, got 0x{actual:08X}")
-              
+
     print(f"{total} tests, {failed} failed")
     sys.exit(1 if failed else 0)
 
