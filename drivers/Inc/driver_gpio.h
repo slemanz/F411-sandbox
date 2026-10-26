@@ -129,4 +129,46 @@ typedef struct
  *                  for more information check the function definitions
  ********************************************************************************************/
 
+/*
+ * Pin helper (runtime)
+ */
+
+gpio_pin_t gpio_pin(GPIO_TypeDef *port, gpio_pin_number_e number);
+
+/*
+ * Clock control
+ */
+
+void gpio_clock_enable(GPIO_TypeDef *port);
+void gpio_clock_disable(GPIO_TypeDef *port);
+
+/*
+ * Init and De-init
+ */
+
+void gpio_init(const gpio_config_t *config);
+void gpio_init_table(const gpio_config_t *table, uint32_t len);
+void gpio_deinit(gpio_pin_t pin);
+void gpio_port_reset(GPIO_TypeDef *port);
+
+/*
+ * Configuration
+ */
+
+void gpio_set_mode(gpio_pin_t pin, gpio_mode_e mode);
+void gpio_set_pull(gpio_pin_t pin, gpio_pull_e pull);
+void gpio_set_otype(gpio_pin_t pin, gpio_otype_e otype);
+void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed);
+void gpio_set_af(gpio_pin_t pin, gpio_af_e af);
+
+/*
+ * Data read and write
+ */
+
+void gpio_set(gpio_pin_t pin);
+void gpio_clear(gpio_pin_t pin);
+void gpio_write(gpio_pin_t pin, gpio_state_e state);
+gpio_state_e gpio_read(gpio_pin_t pin);
+void gpio_toggle(gpio_pin_t pin);
+
 #endif /* INC_DRIVER_GPIO_H_ */
