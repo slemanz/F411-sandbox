@@ -67,7 +67,8 @@ void gpio_set_otype(gpio_pin_t pin, gpio_otype_e otype)
 
 void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed)
 {
-
+    pin.port->OSPEEDR &= ~(0x3U << (pin.number * 2));
+    pin.port->OSPEEDR |=  ((uint32_t)speed << (pin.number * 2));
 }
 
 void gpio_set_af(gpio_pin_t pin, gpio_af_e af)
