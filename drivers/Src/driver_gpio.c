@@ -45,11 +45,37 @@ gpio_pin_t gpio_pin(GPIO_TypeDef *port, gpio_pin_number_e number)
 }
 
 /*
- * Init and De-init
+ * Configuration
  */
 
+void gpio_set_mode(gpio_pin_t pin, gpio_mode_e mode)
+{
+    pin.port->MODER &= ~(0x3U << (pin.number * 2));
+    pin.port->MODER |=  ((uint32_t)mode << (pin.number * 2));
+}
+
+void gpio_set_pull(gpio_pin_t pin, gpio_pull_e pull)
+{
+
+}
+
+void gpio_set_otype(gpio_pin_t pin, gpio_otype_e otype)
+{
+
+}
+
+void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed)
+{
+
+}
+
+void gpio_set_af(gpio_pin_t pin, gpio_af_e af)
+{
+
+}
+
 /*
- * Configuration
+ * Init and De-init
  */
 
 /*
