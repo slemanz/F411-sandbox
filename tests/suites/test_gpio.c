@@ -204,6 +204,47 @@ static void test_set_otype_keeps_neighbors(void)
     TEST_ASSERT_EQ(GPIOB_OTYPER_RESET | (1U << 6) | (1U << 5), GPIOB->OTYPER);
 }
 
+static void test_set_speed_low(void)    /* low = 00: pin must start != 00 to be RED */
+{
+    setup();
+    GPIOB->OSPEEDR |= (0x3U << 10);     /* arrange via register, not the driver */
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_speed(pb5, GPIO_SPEED_LOW);
+
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET, GPIOB->OSPEEDR);
+}
+
+static void test_set_speed_medium(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_speed(pb5, GPIO_SPEED_MEDIUM);
+
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x1U << 10), GPIOB->OSPEEDR);
+}
+
+static void test_set_speed_high(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_speed(pb5, GPIO_SPEED_HIGH);
+
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x3U << 10), GPIOB->OSPEEDR);
+}
+
+static void test_set_speed_high_pin(void)   /* breaks a fixed-shift fake */
+{
+    setup();
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_set_speed(pb15, GPIO_SPEED_FAST);
+
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x2U << 30), GPIOB->OSPEEDR);
+}
+
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -235,4 +276,9 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_otype_pp);
     RUN_TEST(test_set_otype_high_pin);
     RUN_TEST(test_set_otype_keeps_neighbors);
+
+    RUN_TEST(test_set_speed_low);
+    RUN_TEST(test_set_speed_medium);
+    RUN_TEST(test_set_speed_high);
+    RUN_TEST(test_set_speed_high_pin);
 }
