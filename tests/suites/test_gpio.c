@@ -5,6 +5,7 @@
 #define GPIOB_MODER_RESET     0x00000280U
 #define GPIOB_OSPEEDR_RESET   0x000000C0U
 #define GPIOB_PUPDR_RESET     0x00000100U
+#define GPIOB_OTYPER_RESET    0x00000000U
 
 /* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
 #define GPIOA_MODER_RESET     0xA8000000U
@@ -161,6 +162,49 @@ static void test_set_mode_overwrites(void)  /* breaks "|=" without clearing firs
     TEST_ASSERT_EQ(GPIOB_MODER_RESET, GPIOB->MODER);
 }
 
+static void test_set_otype_od(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_otype(pb5, GPIO_OTYPE_OD);
+
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET | (1U << 5), GPIOB->OTYPER);
+}
+
+static void test_set_otype_pp(void)
+{
+    setup();
+    GPIOB->OTYPER |= (1U << 5);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_otype(pb5, GPIO_OTYPE_PP);
+
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET, GPIOB->OTYPER);
+}
+
+static void test_set_otype_high_pin(void)
+{
+    setup();
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_set_otype(pb15, GPIO_OTYPE_OD);
+
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET | (1U << 15), GPIOB->OTYPER);
+}
+
+static void test_set_otype_keeps_neighbors(void)
+{
+    setup();
+    GPIOB->OTYPER |= (1U << 6);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_otype(pb5, GPIO_OTYPE_OD);
+
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET | (1U << 6) | (1U << 5), GPIOB->OTYPER);
+}
+
+
 /* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
@@ -186,4 +230,9 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_mode_af);
     RUN_TEST(test_set_mode_high_pin);
     RUN_TEST(test_set_mode_overwrites);
+
+    RUN_TEST(test_set_otype_od);
+    RUN_TEST(test_set_otype_pp);
+    RUN_TEST(test_set_otype_high_pin);
+    RUN_TEST(test_set_otype_keeps_neighbors);
 }
