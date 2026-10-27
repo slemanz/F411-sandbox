@@ -65,6 +65,26 @@ static void test_clock_disable_gpiod(void)
 }
 
 /* ==================================================================== */
+/*  Pin Helper                                                          */
+/* ==================================================================== */
+
+static void test_pin_helper_pb13(void)
+{
+    gpio_pin_t pin = gpio_pin(GPIOB, GPIO_PIN_13);
+
+    TEST_ASSERT_EQ((uint32_t)GPIOB, (uint32_t)pin.port);
+    TEST_ASSERT_EQ(GPIO_PIN_13, pin.number);
+}
+
+static void test_pin_helper_pa5(void)
+{
+    gpio_pin_t pin = gpio_pin(GPIOA, GPIO_PIN_5);
+
+    TEST_ASSERT_EQ((uint32_t)GPIOA, (uint32_t)pin.port);
+    TEST_ASSERT_EQ(GPIO_PIN_5, pin.number);
+}
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -77,4 +97,6 @@ void test_gpio_suite(void)
     RUN_TEST(test_clock_enable_gpioc);
     RUN_TEST(test_clock_disable_gpioa);
     RUN_TEST(test_clock_disable_gpiod);
+    RUN_TEST(test_pin_helper_pb13);
+    RUN_TEST(test_pin_helper_pa5);
 }
