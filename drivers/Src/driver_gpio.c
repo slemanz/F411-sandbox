@@ -61,7 +61,8 @@ void gpio_set_pull(gpio_pin_t pin, gpio_pull_e pull)
 
 void gpio_set_otype(gpio_pin_t pin, gpio_otype_e otype)
 {
-
+    pin.port->OTYPER &= ~(0x1U << pin.number);
+    pin.port->OTYPER |=  ((uint32_t)otype << pin.number);
 }
 
 void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed)
