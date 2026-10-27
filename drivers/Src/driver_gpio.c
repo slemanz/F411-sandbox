@@ -34,6 +34,16 @@ void gpio_clock_disable(GPIO_TypeDef *port)
  * Pin helper (runtime)
  */
 
+gpio_pin_t gpio_pin(GPIO_TypeDef *port, gpio_pin_number_e number)
+{
+    gpio_pin_t pin;
+
+    pin.port   = port;
+    pin.number = number;
+
+    return pin;
+}
+
 /*
  * Init and De-init
  */
