@@ -56,7 +56,8 @@ void gpio_set_mode(gpio_pin_t pin, gpio_mode_e mode)
 
 void gpio_set_pull(gpio_pin_t pin, gpio_pull_e pull)
 {
-
+    pin.port->PUPDR &= ~(0x3U << (pin.number * 2));
+    pin.port->PUPDR |=  ((uint32_t)pull << (pin.number * 2));
 }
 
 void gpio_set_otype(gpio_pin_t pin, gpio_otype_e otype)
@@ -73,7 +74,6 @@ void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed)
 
 void gpio_set_af(gpio_pin_t pin, gpio_af_e af)
 {
-
 }
 
 /*
