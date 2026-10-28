@@ -74,6 +74,11 @@ void gpio_set_speed(gpio_pin_t pin, gpio_speed_e speed)
 
 void gpio_set_af(gpio_pin_t pin, gpio_af_e af)
 {
+    uint8_t reg = pin.number / 8;          /* AFR[0]: pins 0..7, AFR[1]: pins 8..15 */
+    uint8_t pos = (pin.number % 8) * 4;    /* 4 bits per pin */
+
+    pin.port->AFR[reg] &= ~(0xFU << pos);
+    pin.port->AFR[reg] |=  ((uint32_t)af << pos);
 }
 
 /*
