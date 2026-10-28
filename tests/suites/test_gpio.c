@@ -6,6 +6,8 @@
 #define GPIOB_OSPEEDR_RESET   0x000000C0U
 #define GPIOB_PUPDR_RESET     0x00000100U
 #define GPIOB_OTYPER_RESET    0x00000000U
+#define GPIOB_AFRL_RESET      0x00000000U
+#define GPIOB_AFRH_RESET      0x00000000U
 
 /* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
 #define GPIOA_MODER_RESET     0xA8000000U
@@ -286,6 +288,65 @@ static void test_set_pull_high_pin(void)
     TEST_ASSERT_EQ(GPIOB_PUPDR_RESET | (0x2U << 30), GPIOB->PUPDR);
 }
 
+static void test_set_af_low_reg(void)
+{
+    setup();
+
+    gpio_pin_t pb6 = gpio_pin(GPIOB, GPIO_PIN_6);
+    gpio_set_af(pb6, GPIO_AF7);
+
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET | (0x7U << 24), GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_AFRH_RESET, GPIOB->AFR[1]);
+}
+
+static void test_set_af_high_reg(void)
+{
+    setup();
+
+    gpio_pin_t pb10 = gpio_pin(GPIOB, GPIO_PIN_10);
+    gpio_set_af(pb10, GPIO_AF7);
+
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET, GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_AFRH_RESET | (0x7U << 8), GPIOB->AFR[1]);
+}
+
+static void test_set_af_high_pin(void)
+{
+    setup();
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_set_af(pb15, GPIO_AF15);
+
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET, GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_AFRH_RESET | (0xFU << 28), GPIOB->AFR[1]);
+}
+
+static void test_set_af0(void)
+{
+    setup();
+    GPIOB->AFR[0] |= (0xFU << 20);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_af(pb5, GPIO_AF0);
+
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET, GPIOB->AFR[0]);
+}
+
+static void test_set_af_keeps_neighbors(void)
+{
+    setup();
+    GPIOB->AFR[0] |= (0x7U << 28);
+
+    gpio_pin_t pb6 = gpio_pin(GPIOB, GPIO_PIN_6);
+    gpio_set_af(pb6, GPIO_AF7);
+
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET | (0x7U << 28) | (0x7U << 24), GPIOB->AFR[0]);
+}
+
+/* ==================================================================== */
+/*  Init and De-init                                                    */
+/* ==================================================================== */
+
 /* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
@@ -326,4 +387,12 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_pull_up);
     RUN_TEST(test_set_pull_down);
     RUN_TEST(test_set_pull_high_pin);
+
+    RUN_TEST(test_set_af_low_reg);
+    RUN_TEST(test_set_af_high_reg);
+    RUN_TEST(test_set_af_high_pin);
+    RUN_TEST(test_set_af0);
+    RUN_TEST(test_set_af_keeps_neighbors);
+
+    /* Init and De-init*/
 }
