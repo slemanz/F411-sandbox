@@ -245,6 +245,46 @@ static void test_set_speed_high_pin(void)   /* breaks a fixed-shift fake */
     TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x2U << 30), GPIOB->OSPEEDR);
 }
 
+static void test_set_pull_none(void)
+{
+    setup();
+    GPIOB->PUPDR |= (0x2U << 10);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_pull(pb5, GPIO_PULL_NONE);
+
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET, GPIOB->PUPDR);
+}
+
+static void test_set_pull_up(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);  
+    gpio_set_pull(pb5, GPIO_PULL_UP);
+
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET | (0x1U << 10), GPIOB->PUPDR);
+}
+
+static void test_set_pull_down(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set_pull(pb5, GPIO_PULL_DOWN);
+
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET | (0x2U << 10), GPIOB->PUPDR);
+}
+
+static void test_set_pull_high_pin(void)
+{
+    setup();
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_set_pull(pb15, GPIO_PULL_DOWN);
+
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET | (0x2U << 30), GPIOB->PUPDR);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -281,4 +321,9 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_speed_medium);
     RUN_TEST(test_set_speed_high);
     RUN_TEST(test_set_speed_high_pin);
+
+    RUN_TEST(test_set_pull_none);
+    RUN_TEST(test_set_pull_up);
+    RUN_TEST(test_set_pull_down);
+    RUN_TEST(test_set_pull_high_pin);
 }
