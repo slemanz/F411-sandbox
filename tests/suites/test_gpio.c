@@ -8,6 +8,8 @@
 #define GPIOB_OTYPER_RESET    0x00000000U
 #define GPIOB_AFRL_RESET      0x00000000U
 #define GPIOB_AFRH_RESET      0x00000000U
+#define GPIOB_ODR_RESET       0x00000000U
+
 
 /* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
 #define GPIOA_MODER_RESET     0xA8000000U
@@ -344,8 +346,30 @@ static void test_set_af_keeps_neighbors(void)
 }
 
 /* ==================================================================== */
-/*  Init and De-init                                                    */
+/*  Init                                                                */
 /* ==================================================================== */
+
+static void test_init_output(void)
+{
+    setup();  
+
+    gpio_config_t pb5 = {
+        .pin        = {GPIOB, GPIO_PIN_5},
+        .mode       = GPIO_MODE_OUTPUT,
+        .otype      = GPIO_OTYPE_OD,
+        .speed      = GPIO_SPEED_HIGH,
+        .pull       = GPIO_PULL_UP,
+        .init_state = GPIO_STATE_SET
+    };
+    gpio_init(&pb5);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET   | (0x1U << 10), GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET  | (0x1U << 5),  GPIOB->OTYPER);
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x3U << 10), GPIOB->OSPEEDR);
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET   | (0x1U << 10), GPIOB->PUPDR);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET, GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET     | (0x1U << 5),  GPIOB->ODR);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -394,5 +418,10 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_af0);
     RUN_TEST(test_set_af_keeps_neighbors);
 
-    /* Init and De-init*/
+    /* Init */
+     RUN_TEST(test_init_output);
+     //RUN_TEST(test_init_af);
+     //RUN_TEST(test_init_enables_clock);
+     //RUN_TEST(test_init_state_reset);
+     //RUN_TEST(test_init_applies_zero_fields);
 }
