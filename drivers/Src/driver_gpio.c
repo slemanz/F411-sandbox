@@ -85,6 +85,58 @@ void gpio_set_af(gpio_pin_t pin, gpio_af_e af)
  * Init and De-init
  */
 
+void gpio_init(const gpio_config_t *config)
+{
+    gpio_clock_enable(config->pin.port);
+
+    if(config->mode == GPIO_MODE_OUTPUT)
+    {
+        gpio_write(config->pin, config->init_state);
+    }
+
+    gpio_set_otype(config->pin, config->otype);
+    gpio_set_speed(config->pin, config->speed);
+    gpio_set_pull(config->pin, config->pull);
+    gpio_set_af(config->pin, config->af);
+    gpio_set_mode(config->pin, config->mode);
+}
+
+void gpio_init_table(const gpio_config_t *table, uint32_t len)
+{
+
+}
+
+void gpio_deinit(gpio_pin_t pin)
+{
+
+}
+
+void gpio_port_reset(GPIO_TypeDef *port)
+{
+
+}
+
 /*
  * Data read and write
  */
+
+void gpio_set(gpio_pin_t pin)
+{
+    pin.port->BSRR = (1U << pin.number);
+}
+
+void gpio_clear(gpio_pin_t pin)
+{
+    pin.port->BSRR = (1U << (pin.number + 16));
+}
+
+void gpio_write(gpio_pin_t pin, gpio_state_e state)
+{
+    if(state == GPIO_STATE_SET)
+    {
+        gpio_set(pin);
+    }else
+    {
+        gpio_clear(pin);
+    }
+}
