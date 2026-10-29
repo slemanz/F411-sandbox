@@ -14,8 +14,6 @@
 /* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
 #define GPIOA_MODER_RESET     0xA8000000U
 
-//static const gpio_pin_t PB5 = { GPIOB, GPIO_PIN_5 };
-
 static void setup(void)
 {
     RCC->AHB1ENR  |=  RCC_AHB1ENR_GPIOAEN;
@@ -371,6 +369,72 @@ static void test_init_output(void)
     TEST_ASSERT_EQ(GPIOB_ODR_RESET     | (0x1U << 5),  GPIOB->ODR);
 }
 
+static void test_init_af(void)
+{
+    setup();
+
+    gpio_config_t pb6 = {
+        .pin  = { GPIOB, GPIO_PIN_6 },
+        .mode = GPIO_MODE_ALTFN,
+        .af   = GPIO_AF7
+    };
+    gpio_init(&pb6);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET | (0x2U << 12), GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET  | (0x7U << 24), GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_AFRH_RESET, GPIOB->AFR[1]);
+}
+
+static void test_init_enables_clock(void)
+{
+    setup();
+    RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOBEN;
+
+    gpio_config_t pb5 = {
+        .pin  = { GPIOB, GPIO_PIN_5 },
+        .mode = GPIO_MODE_OUTPUT
+    };
+    gpio_init(&pb5);
+
+    TEST_ASSERT_EQ(RCC_AHB1ENR_GPIOBEN, RCC->AHB1ENR & RCC_AHB1ENR_GPIOBEN);
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET | (0x1U << 10), GPIOB->MODER);
+}
+
+static void test_init_state_reset(void)
+{
+    setup();
+    GPIOB->ODR |= (1U << 5);
+
+    gpio_config_t pb5 = {
+        .pin        = { GPIOB, GPIO_PIN_5 },
+        .mode       = GPIO_MODE_OUTPUT,
+        .init_state = GPIO_STATE_RESET
+    };
+    gpio_init(&pb5);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET, GPIOB->ODR);
+}
+
+  static void test_init_applies_zero_fields(void)
+  {
+    setup();
+    GPIOB->OTYPER  |= (0x1U << 5);
+    GPIOB->OSPEEDR |= (0x3U << 10);
+    GPIOB->PUPDR   |= (0x1U << 10);
+    GPIOB->AFR[0]  |= (0xFU << 20);
+
+    gpio_config_t pb5 = {
+        .pin  = { GPIOB, GPIO_PIN_5 },
+        .mode = GPIO_MODE_OUTPUT
+    };
+    gpio_init(&pb5);
+
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET,  GPIOB->OTYPER);
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET, GPIOB->OSPEEDR);
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET,   GPIOB->PUPDR);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET,    GPIOB->AFR[0]);
+}
+
 /* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
@@ -419,9 +483,9 @@ void test_gpio_suite(void)
     RUN_TEST(test_set_af_keeps_neighbors);
 
     /* Init */
-     RUN_TEST(test_init_output);
-     //RUN_TEST(test_init_af);
-     //RUN_TEST(test_init_enables_clock);
-     //RUN_TEST(test_init_state_reset);
-     //RUN_TEST(test_init_applies_zero_fields);
+    RUN_TEST(test_init_output);
+    RUN_TEST(test_init_af);
+    RUN_TEST(test_init_enables_clock);
+    RUN_TEST(test_init_state_reset);
+    RUN_TEST(test_init_applies_zero_fields);
 }
