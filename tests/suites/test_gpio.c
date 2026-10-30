@@ -436,6 +436,85 @@ static void test_init_state_reset(void)
 }
 
 /* ==================================================================== */
+/*  Data read and write                                                 */
+/* ==================================================================== */
+
+static void test_set_pin(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set(pb5);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 5), GPIOB->ODR);
+}
+
+static void test_set_keeps_neighbors(void)
+{
+    setup();
+    GPIOB->ODR |= (1U << 6);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_set(pb5);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 6) | (1U << 5), GPIOB->ODR);
+}
+
+static void test_set_high_pin(void)
+{
+    setup();
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_set(pb15);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 15), GPIOB->ODR);
+}
+
+static void test_clear_pin(void)
+{
+    setup();
+    GPIOB->ODR |= (1U << 6) | (1U << 5);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_clear(pb5);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 6), GPIOB->ODR);
+}
+
+static void test_clear_high_pin(void)
+{
+    setup();
+    GPIOB->ODR |= (1U << 15) | (1U << 14);
+
+    gpio_pin_t pb15 = gpio_pin(GPIOB, GPIO_PIN_15);
+    gpio_clear(pb15);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 14), GPIOB->ODR);
+}
+
+static void test_write_set(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_write(pb5, GPIO_STATE_SET);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 5), GPIOB->ODR);
+}
+
+static void test_write_reset(void)
+{
+    setup();
+    GPIOB->ODR |= (1U << 5);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_write(pb5, GPIO_STATE_RESET);
+
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET, GPIOB->ODR);
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -488,4 +567,13 @@ void test_gpio_suite(void)
     RUN_TEST(test_init_enables_clock);
     RUN_TEST(test_init_state_reset);
     RUN_TEST(test_init_applies_zero_fields);
+
+    /* Data read and write */
+    RUN_TEST(test_set_pin);
+    RUN_TEST(test_set_keeps_neighbors);
+    RUN_TEST(test_set_high_pin);
+    RUN_TEST(test_clear_pin);
+    RUN_TEST(test_clear_high_pin);
+    RUN_TEST(test_write_set);
+    RUN_TEST(test_write_reset);
 }
