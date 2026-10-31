@@ -1,6 +1,9 @@
 #include "ttest.h"
 #include "driver_gpio.h"
 
+/* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
+#define GPIOA_MODER_RESET     0xA8000000U
+
 /* GPIOB reset values (RM0383, 8.4) */
 #define GPIOB_MODER_RESET     0x00000280U
 #define GPIOB_OSPEEDR_RESET   0x000000C0U
@@ -10,17 +13,13 @@
 #define GPIOB_AFRH_RESET      0x00000000U
 #define GPIOB_ODR_RESET       0x00000000U
 
-
-/* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
-#define GPIOA_MODER_RESET     0xA8000000U
+#define GPIOC_ODR_RESET       0x00000000U
 
 /* Helpers */
 static void pull_delay(void) 
 {
     for(volatile uint32_t i = 0; i < 100; i++);
 }
-
-
 
 /* ==================================================================== */
 /*  Setup                                                               */
@@ -626,6 +625,52 @@ static void test_deinit_high_pin(void)  /* AFR[1] side */
 }
 
 /* ==================================================================== */
+/*  Port reset                                                          */
+/* ==================================================================== */
+
+static void test_port_reset(void)
+{
+    setup();
+    GPIOB->MODER   |= (0x1U << 10);
+    GPIOB->OTYPER  |= (0x1U << 5);
+    GPIOB->OSPEEDR |= (0x3U << 10);
+    GPIOB->PUPDR   |= (0x1U << 10);
+    GPIOB->AFR[0]  |= (0xFU << 20);
+    GPIOB->ODR     |= (0x1U << 5);
+
+    gpio_port_reset(GPIOB);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET,   GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET,  GPIOB->OTYPER);
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET, GPIOB->OSPEEDR);
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET,   GPIOB->PUPDR);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET,    GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET,     GPIOB->ODR);
+}
+
+static void test_port_reset_releases(void)
+{
+    setup();
+
+    gpio_port_reset(GPIOB);
+
+    TEST_ASSERT_EQ(0x0, RCC->AHB1RSTR);
+}
+
+static void test_port_reset_only_that_port(void)
+{
+    setup();
+    GPIOB->ODR |= (0x1U << 5);
+    GPIOC->ODR |= (0x1U << 13);
+
+    gpio_port_reset(GPIOC);
+
+    TEST_ASSERT_EQ(GPIOC_ODR_RESET, GPIOC->ODR);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (0x1U << 5), GPIOB->ODR);
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -697,4 +742,9 @@ void test_gpio_suite(void)
     RUN_TEST(test_init_table_respects_len);
     RUN_TEST(test_deinit);
     RUN_TEST(test_deinit_high_pin);
+
+    /* Port reset */
+    RUN_TEST(test_port_reset);
+    RUN_TEST(test_port_reset_releases);
+    RUN_TEST(test_port_reset_only_that_port);
 }
