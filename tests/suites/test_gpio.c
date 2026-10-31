@@ -14,6 +14,18 @@
 /* GPIOA reset value (PA13/PA14/PA15 in AF for SWD/JTAG) */
 #define GPIOA_MODER_RESET     0xA8000000U
 
+/* Helpers */
+static void pull_delay(void) 
+{
+    for(volatile uint32_t i = 0; i < 100; i++);
+}
+
+
+
+/* ==================================================================== */
+/*  Setup                                                               */
+/* ==================================================================== */
+
 static void setup(void)
 {
     RCC->AHB1ENR  |=  RCC_AHB1ENR_GPIOAEN;
@@ -513,6 +525,41 @@ static void test_write_reset(void)
     TEST_ASSERT_EQ(GPIOB_ODR_RESET, GPIOB->ODR);
 }
 
+static void test_read_pull_up(void)
+{
+    setup();
+    GPIOA->PUPDR |= (0x1U << 8);
+    pull_delay();
+
+    gpio_pin_t pa4 = gpio_pin(GPIOA, GPIO_PIN_4);
+
+    TEST_ASSERT_EQ(GPIO_STATE_SET, gpio_read(pa4));
+}
+
+static void test_read_pull_down(void)
+{
+    setup();
+    GPIOA->PUPDR |= (0x2U << 8);
+    pull_delay();
+
+    gpio_pin_t pa4 = gpio_pin(GPIOA, GPIO_PIN_4);
+
+    TEST_ASSERT_EQ(GPIO_STATE_RESET, gpio_read(pa4));
+}
+
+static void test_toggle(void)
+{
+    setup();
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+
+    gpio_toggle(pb5);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET | (1U << 5), GPIOB->ODR);
+
+    gpio_toggle(pb5);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET, GPIOB->ODR);
+}
+
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -576,4 +623,8 @@ void test_gpio_suite(void)
     RUN_TEST(test_clear_high_pin);
     RUN_TEST(test_write_set);
     RUN_TEST(test_write_reset);
+
+    RUN_TEST(test_read_pull_up);
+    RUN_TEST(test_read_pull_down);
+    RUN_TEST(test_toggle);
 }
