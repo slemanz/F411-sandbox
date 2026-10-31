@@ -140,3 +140,23 @@ void gpio_write(gpio_pin_t pin, gpio_state_e state)
         gpio_clear(pin);
     }
 }
+
+gpio_state_e gpio_read(gpio_pin_t pin)
+{
+    if(pin.port->IDR & (1U << pin.number))
+    {
+        return GPIO_STATE_SET;
+    }
+    return GPIO_STATE_RESET;
+}
+
+void gpio_toggle(gpio_pin_t pin)
+{
+    if(pin.port->ODR & (1U << pin.number))
+    {
+        gpio_clear(pin);
+    }else
+    {
+        gpio_set(pin);
+    }
+}
