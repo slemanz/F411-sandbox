@@ -103,17 +103,35 @@ void gpio_init(const gpio_config_t *config)
 
 void gpio_init_table(const gpio_config_t *table, uint32_t len)
 {
-
+    for(uint32_t i = 0; i < len; i++)
+    {
+        gpio_init(&table[i]);
+    }
 }
 
 void gpio_deinit(gpio_pin_t pin)
 {
-
+    gpio_set_mode(pin, GPIO_MODE_INPUT);
+    gpio_set_otype(pin, GPIO_OTYPE_PP);
+    gpio_set_speed(pin, GPIO_SPEED_LOW);
+    gpio_set_pull(pin, GPIO_PULL_NONE);
+    gpio_set_af(pin, GPIO_AF0);
+    gpio_clear(pin);
 }
 
 void gpio_port_reset(GPIO_TypeDef *port)
 {
+    uint32_t reset_bit = 0;
 
+    if      (port == GPIOA) reset_bit = RCC_AHB1RSTR_GPIOARST;
+    else if (port == GPIOB) reset_bit = RCC_AHB1RSTR_GPIOBRST;
+    else if (port == GPIOC) reset_bit = RCC_AHB1RSTR_GPIOCRST;
+    else if (port == GPIOD) reset_bit = RCC_AHB1RSTR_GPIODRST;
+    else if (port == GPIOE) reset_bit = RCC_AHB1RSTR_GPIOERST;
+    else if (port == GPIOH) reset_bit = RCC_AHB1RSTR_GPIOHRST;
+
+    RCC->AHB1RSTR |=  reset_bit;
+    RCC->AHB1RSTR &= ~reset_bit;
 }
 
 /*
