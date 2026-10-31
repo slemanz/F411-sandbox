@@ -560,6 +560,70 @@ static void test_toggle(void)
     TEST_ASSERT_EQ(GPIOB_ODR_RESET, GPIOB->ODR);
 }
 
+/* ==================================================================== */
+/*  Init table and De-init                                              */
+/* ==================================================================== */
+
+static void test_init_table(void)
+{
+    setup();
+
+    static const gpio_config_t table[] = {
+        { .pin = { GPIOB, GPIO_PIN_5 }, .mode = GPIO_MODE_OUTPUT },
+        { .pin = { GPIOB, GPIO_PIN_6 }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7 },
+    };
+    gpio_init_table(table, 2);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET | (0x2U << 12) | (0x1U << 10), GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET  | (0x7U << 24), GPIOB->AFR[0]);
+}
+
+static void test_init_table_respects_len(void) /* breaks a fixed loop count */
+{
+    setup();
+
+    static const gpio_config_t table[] = {
+        { .pin = { GPIOB, GPIO_PIN_5 }, .mode = GPIO_MODE_OUTPUT },
+        { .pin = { GPIOB, GPIO_PIN_6 }, .mode = GPIO_MODE_OUTPUT },
+    };
+    gpio_init_table(table, 1);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET | (0x1U << 10), GPIOB->MODER);
+}
+
+static void test_deinit(void)           /* PB6 configured too: must stay untouched */
+{
+    setup();
+    GPIOB->MODER   |= (0x1U << 12) | (0x1U << 10);    /* arrange PB5 and PB6: output, OD, */
+    GPIOB->OTYPER  |= (0x1U << 6)  | (0x1U << 5);     /* high speed, pull-up, AF15, high  */
+    GPIOB->OSPEEDR |= (0x3U << 12) | (0x3U << 10);
+    GPIOB->PUPDR   |= (0x1U << 12) | (0x1U << 10);
+    GPIOB->AFR[0]  |= (0xFU << 24) | (0xFU << 20);
+    GPIOB->ODR     |= (0x1U << 6)  | (0x1U << 5);
+
+    gpio_pin_t pb5 = gpio_pin(GPIOB, GPIO_PIN_5);
+    gpio_deinit(pb5);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET   | (0x1U << 12), GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_OTYPER_RESET  | (0x1U << 6),  GPIOB->OTYPER);
+    TEST_ASSERT_EQ(GPIOB_OSPEEDR_RESET | (0x3U << 12), GPIOB->OSPEEDR);
+    TEST_ASSERT_EQ(GPIOB_PUPDR_RESET   | (0x1U << 12), GPIOB->PUPDR);
+    TEST_ASSERT_EQ(GPIOB_AFRL_RESET    | (0xFU << 24), GPIOB->AFR[0]);
+    TEST_ASSERT_EQ(GPIOB_ODR_RESET     | (0x1U << 6),  GPIOB->ODR);
+}
+
+static void test_deinit_high_pin(void)  /* AFR[1] side */
+{
+    setup();
+    GPIOB->MODER  |= (0x2U << 20);
+    GPIOB->AFR[1] |= (0x7U << 8);
+
+    gpio_pin_t pb10 = gpio_pin(GPIOB, GPIO_PIN_10);
+    gpio_deinit(pb10);
+
+    TEST_ASSERT_EQ(GPIOB_MODER_RESET, GPIOB->MODER);
+    TEST_ASSERT_EQ(GPIOB_AFRH_RESET,  GPIOB->AFR[1]);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -627,4 +691,10 @@ void test_gpio_suite(void)
     RUN_TEST(test_read_pull_up);
     RUN_TEST(test_read_pull_down);
     RUN_TEST(test_toggle);
+
+    /* Init table and De-init */
+    RUN_TEST(test_init_table);
+    RUN_TEST(test_init_table_respects_len);
+    RUN_TEST(test_deinit);
+    RUN_TEST(test_deinit_high_pin);
 }
