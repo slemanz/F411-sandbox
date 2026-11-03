@@ -5,7 +5,22 @@
 #define CYCLES_PER_MS   (CORE_CLOCK_HZ / 1000U)
 
 /* Helpers */
+static void cycle_counter_start(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL  |= DWT_CTRL_CYCCNTENA_Msk;
+}
 
+/*
+static void wait_cycles(uint32_t cycles)
+{
+    uint32_t start = DWT->CYCCNT;
+
+    while((DWT->CYCCNT - start) < cycles)
+    {
+    }
+}*/
 
 /* ==================================================================== */
 /*  Setup                                                               */
@@ -17,8 +32,29 @@ static void setup(void)
     SysTick->LOAD = 0;
     SysTick->VAL  = 0;
 
-    //cycle_counter_start();
+    cycle_counter_start();
 }
+
+static void test_init_load_other_clock(void)    /* breaks a fixed LOAD = 15999 */
+{
+    setup();
+
+    systick_init(8000000U);
+
+    TEST_ASSERT_EQ(7999U, SysTick->LOAD);
+}
+
+static void test_init_ctrl(void)
+{
+    setup();
+
+    systick_init(CORE_CLOCK_HZ);
+
+    TEST_ASSERT_EQ(SysTick_CTRL_CLKSOURCE_Msk |
+                   SysTick_CTRL_TICKINT_Msk   |
+                   SysTick_CTRL_ENABLE_Msk, SysTick->CTRL);
+}
+
 
 /* ==================================================================== */
 /*  Init                                                                */
@@ -50,8 +86,8 @@ static void test_init_load_1ms(void)
   {
       /* Init */
       RUN_TEST(test_init_load_1ms);
-      //RUN_TEST(test_init_load_other_clock);
-      //RUN_TEST(test_init_ctrl);
+      RUN_TEST(test_init_load_other_clock);
+      RUN_TEST(test_init_ctrl);
 
       /* Time */
       //RUN_TEST(test_get_ms_counts);
