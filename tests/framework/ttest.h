@@ -35,4 +35,8 @@ bool ttest_check(uint32_t expected, uint32_t actual, const char *file, uint32_t 
 #define TEST_ASSERT_EQ(expected, actual) \
         do { if(!ttest_check((expected), (actual), __FILE__, __LINE__)) return; }while(0)
 
+#define TEST_ASSERT_TRUE(condition) \
+        TEST_ASSERT_EQ(true, (condition))
+
+
 #endif /* TTEST_H_ */
