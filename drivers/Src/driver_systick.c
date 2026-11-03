@@ -1,8 +1,20 @@
 #include "driver_systick.h"
 
+static volatile uint32_t s_ticks_ms = 0;
+
+/*
+ * Init and De-init
+ */
+
 void systick_init(uint32_t core_clock_hz)
 {
+    s_ticks_ms = 0;
 
+    SysTick->LOAD = (core_clock_hz/1000U) - 1U;     /* 1ms period */
+    SysTick->VAL = 0;
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |    /* core clock */
+                    SysTick_CTRL_TICKINT_Msk   |    /* interrupt on each tick */
+                    SysTick_CTRL_ENABLE_Msk;        /* start counter */
 }
 
 void systick_deinit(void)
