@@ -2,6 +2,12 @@
 
 static volatile uint32_t s_ticks_ms = 0;
 
+static uint32_t systick_elapsed_ms(uint32_t start_ms)
+{
+    return systick_get_ms() - start_ms;
+}
+
+
 /*
  * Init and De-init
  */
@@ -32,7 +38,7 @@ void systick_delay_ms(uint32_t ms)
 {
     uint32_t ticks_start_ms = systick_get_ms();
 
-    while((systick_get_ms() - ticks_start_ms) <= ms)
+    while(systick_elapsed_ms(ticks_start_ms) <= ms)
     {
 
     }
@@ -40,12 +46,13 @@ void systick_delay_ms(uint32_t ms)
 
 void systick_timeout_start(systick_timeout_t *timeout, uint32_t duration_ms)
 {
-
+    timeout->start_ms    = systick_get_ms();
+    timeout->duration_ms = duration_ms;
 }
 
 bool systick_timeout_expired(const systick_timeout_t *timeout)
 {
-    return false;
+    return systick_elapsed_ms(timeout->start_ms) >= timeout->duration_ms;
 }
 
 void SysTick_Handler(void)
