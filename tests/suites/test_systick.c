@@ -125,6 +125,54 @@ static void test_get_ms_counts(void)
 /*  Timeout                                                             */
 /* ==================================================================== */
 
+static void test_timeout_expires(void)
+{
+    setup();
+
+    systick_init(CORE_CLOCK_HZ);
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, 5);
+    wait_cycles(5U * CYCLES_PER_MS + CYCLES_PER_MS / 2U);
+
+    TEST_ASSERT_EQ(true, systick_timeout_expired(&timeout));
+}
+
+static void test_timeout_not_expired_yet(void)  /* breaks "return true" */
+{
+    setup();
+
+    systick_init(CORE_CLOCK_HZ);
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, 5);
+    wait_cycles(3U * CYCLES_PER_MS + CYCLES_PER_MS / 2U);
+
+    TEST_ASSERT_EQ(false, systick_timeout_expired(&timeout));
+}
+
+static void test_timeout_started_late(void)     /* breaks "ignore start_ms" */
+{
+    setup();
+
+    systick_init(CORE_CLOCK_HZ);
+    systick_timeout_t timeout;
+    wait_cycles(6U * CYCLES_PER_MS + CYCLES_PER_MS / 2U);
+    systick_timeout_start(&timeout, 5);
+    wait_cycles(CYCLES_PER_MS);
+
+    TEST_ASSERT_EQ(false, systick_timeout_expired(&timeout));
+}
+
+static void test_timeout_zero_expires_now(void)
+{
+    setup();
+
+    systick_init(CORE_CLOCK_HZ);
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, 0);
+
+    TEST_ASSERT_EQ(true, systick_timeout_expired(&timeout));
+}
+
 /* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
@@ -143,10 +191,10 @@ static void test_get_ms_counts(void)
       RUN_TEST(test_delay_10ms);
 
       /* Timeout */
-      //RUN_TEST(test_timeout_expires);
-      //RUN_TEST(test_timeout_not_expired_yet);
-      //RUN_TEST(test_timeout_started_late);
-      //RUN_TEST(test_timeout_zero_expires_now);
+      RUN_TEST(test_timeout_expires);
+      RUN_TEST(test_timeout_not_expired_yet);
+      RUN_TEST(test_timeout_started_late);
+      RUN_TEST(test_timeout_zero_expires_now);
 
       systick_deinit();
   }
