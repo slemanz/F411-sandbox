@@ -114,6 +114,57 @@ static void test_set_disabled_keeps_others(void)    /* breaks "CR1 = 0" */
 }
 
 /* ==================================================================== */
+/* Mode                                                                 */
+/* ==================================================================== */
+
+static void test_mode_tx_rx(void)
+{
+    setup();
+
+    uart_set_mode(USART1, UART_MODE_TX_RX);
+
+    TEST_ASSERT_EQ(USART_CR1_TE | USART_CR1_RE, USART1->CR1);
+}
+
+static void test_mode_tx(void)
+{
+    setup();
+
+    uart_set_mode(USART1, UART_MODE_TX);
+
+    TEST_ASSERT_EQ(USART_CR1_TE, USART1->CR1);
+}
+
+static void test_mode_rx(void)
+{
+    setup();
+
+    uart_set_mode(USART1, UART_MODE_RX);
+
+    TEST_ASSERT_EQ(USART_CR1_RE, USART1->CR1);
+}
+
+static void test_mode_overwrites(void)      /* breaks "|=" without clearing first */
+{
+    setup();
+
+    uart_set_mode(USART1, UART_MODE_TX_RX);
+    uart_set_mode(USART1, UART_MODE_TX);
+
+    TEST_ASSERT_EQ(USART_CR1_TE, USART1->CR1);
+}
+
+static void test_mode_usart6(void)          /* breaks a fixed USART1 */
+{
+    setup();
+
+    uart_set_mode(USART6, UART_MODE_RX);
+
+    TEST_ASSERT_EQ(0U, USART1->CR1);
+    TEST_ASSERT_EQ(USART_CR1_RE, USART6->CR1);
+}
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -134,4 +185,11 @@ void test_uart_suite(void)
     /* Enable */
     RUN_TEST(test_set_enabled);
     RUN_TEST(test_set_disabled_keeps_others);
+
+    /* Mode */
+    RUN_TEST(test_mode_tx_rx);
+    RUN_TEST(test_mode_tx);
+    RUN_TEST(test_mode_rx);
+    RUN_TEST(test_mode_overwrites);
+    RUN_TEST(test_mode_usart6);
 }
