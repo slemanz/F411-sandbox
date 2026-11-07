@@ -32,9 +32,11 @@ OBJS += $(DIR_BUILD)/syscalls.o
 #SUITES += $(DIR_BUILD)/test_sanity.o
 SUITES += $(DIR_BUILD)/test_gpio.o
 SUITES += $(DIR_BUILD)/test_systick.o
+SUITES += $(DIR_BUILD)/test_uart.o
 
 DRIVERS += $(DIR_BUILD)/driver_gpio.o
 DRIVERS += $(DIR_BUILD)/driver_systick.o
+DRIVERS += $(DIR_BUILD)/driver_uart.o
 
 PREREQ = $(DIR_BUILD)
 
