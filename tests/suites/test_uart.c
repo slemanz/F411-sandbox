@@ -20,8 +20,6 @@ static void setup(void)
 
 static void test_clock_enable_usart1(void)
 {
-    setup();
-
     RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
     uint32_t others = RCC->APB2ENR;
 
@@ -60,6 +58,27 @@ static void test_clock_disable_usart6(void)
     TEST_ASSERT_EQ(others, RCC->APB2ENR);
 }
 
+/* ==================================================================== */
+/*  Baudrate                                                            */
+/* ==================================================================== */
+
+static void test_baudrate_115200(void)
+{
+    setup();
+
+    uart_set_baudrate(USART1, PCLK_HZ, 115200);
+
+    TEST_ASSERT_EQ(139U, USART1->BRR);
+}
+
+static void test_baudrate_9600(void)
+{
+    setup();
+
+    uart_set_baudrate(USART1, PCLK_HZ, 9600);
+
+    TEST_ASSERT_EQ(1667U, USART1->BRR);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -74,6 +93,6 @@ void test_uart_suite(void)
     RUN_TEST(test_clock_disable_usart6);
 
     /* Baudrate */
-    //RUN_TEST(test_baudrate_115200);
-    //RUN_TEST(test_baudrate_9600);
+    RUN_TEST(test_baudrate_115200);
+    RUN_TEST(test_baudrate_9600);
 }
