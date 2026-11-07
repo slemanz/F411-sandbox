@@ -14,6 +14,16 @@ static void setup(void)
     RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;
 }
 
+static void test_setup_leaves_reset_values(void)
+{
+    setup();
+
+    TEST_ASSERT_EQ(0U, USART1->CR1);
+    TEST_ASSERT_EQ(0U, USART1->CR2);
+    TEST_ASSERT_EQ(0U, USART1->BRR);
+}
+
+
 /* ==================================================================== */
 /*  Clock                                                               */
 /* ==================================================================== */
@@ -81,11 +91,36 @@ static void test_baudrate_9600(void)
 }
 
 /* ==================================================================== */
+/*  Enable                                                              */
+/* ==================================================================== */
+
+static void test_set_enabled(void)
+{
+    setup();
+
+    uart_set_enabled(USART1, true);
+
+    TEST_ASSERT_EQ(USART_CR1_UE, USART1->CR1);
+}
+
+static void test_set_disabled_keeps_others(void)    /* breaks "CR1 = 0" */
+{
+    setup();
+    USART1->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+
+    uart_set_enabled(USART1, false);
+
+    TEST_ASSERT_EQ(USART_CR1_TE | USART_CR1_RE, USART1->CR1);
+}
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
 void test_uart_suite(void)
 {
+    RUN_TEST(test_setup_leaves_reset_values);
+
     /* Clock */
     RUN_TEST(test_clock_enable_usart1);
     RUN_TEST(test_clock_enable_usart2);
@@ -95,4 +130,8 @@ void test_uart_suite(void)
     /* Baudrate */
     RUN_TEST(test_baudrate_115200);
     RUN_TEST(test_baudrate_9600);
+
+    /* Enable */
+    RUN_TEST(test_set_enabled);
+    RUN_TEST(test_set_disabled_keeps_others);
 }
