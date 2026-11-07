@@ -6,12 +6,16 @@
 
 void uart_clock_enable(USART_TypeDef *instance)
 {
-
+    if      (instance == USART1) RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+    else if (instance == USART2) RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+    else if (instance == USART6) RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
 }
 
 void uart_clock_disable(USART_TypeDef *instance)
 {
-
+    if      (instance == USART1) RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
+    else if (instance == USART2) RCC->APB1ENR &= ~RCC_APB1ENR_USART2EN;
+    else if (instance == USART6) RCC->APB2ENR &= ~RCC_APB2ENR_USART6EN;
 }
 
 /*
@@ -54,7 +58,7 @@ void uart_set_stop_bits(USART_TypeDef *instance, uart_stop_bits_e stop_bits)
 
 void uart_set_baudrate(USART_TypeDef *instance, uint32_t clock_hz, uint32_t baudrate)
 {
-
+    instance->BRR = (clock_hz + (baudrate / 2U)) / baudrate;
 }
 
 /*
