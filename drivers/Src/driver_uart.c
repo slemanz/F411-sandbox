@@ -49,12 +49,24 @@ void uart_set_enabled(USART_TypeDef *instance, bool enabled)
 
 void uart_set_mode(USART_TypeDef *instance, uart_mode_e mode)
 {
+    instance->CR1 &= ~(USART_CR1_TE | USART_CR1_RE);
 
+    if(mode != UART_MODE_RX) instance->CR1 |= USART_CR1_TE;
+    if(mode != UART_MODE_TX) instance->CR1 |= USART_CR1_RE;
 }
 
 void uart_set_parity(USART_TypeDef *instance, uart_parity_e parity)
 {
+    instance->CR1 &= ~(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS);
 
+    if(parity != UART_PARITY_NONE)
+    {
+        instance->CR1 |= USART_CR1_M | USART_CR1_PCE;
+    }
+    if(parity == UART_PARITY_ODD)
+    {
+        instance->CR1 |= USART_CR1_PS;
+    }
 }
 
 void uart_set_stop_bits(USART_TypeDef *instance, uart_stop_bits_e stop_bits)
