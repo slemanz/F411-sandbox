@@ -103,7 +103,7 @@ static void test_set_enabled(void)
     TEST_ASSERT_EQ(USART_CR1_UE, USART1->CR1);
 }
 
-static void test_set_disabled_keeps_others(void)    /* breaks "CR1 = 0" */
+static void test_set_disabled_keeps_others(void)
 {
     setup();
     USART1->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
@@ -144,7 +144,7 @@ static void test_mode_rx(void)
     TEST_ASSERT_EQ(USART_CR1_RE, USART1->CR1);
 }
 
-static void test_mode_overwrites(void)      /* breaks "|=" without clearing first */
+static void test_mode_overwrites(void)
 {
     setup();
 
@@ -154,7 +154,7 @@ static void test_mode_overwrites(void)      /* breaks "|=" without clearing firs
     TEST_ASSERT_EQ(USART_CR1_TE, USART1->CR1);
 }
 
-static void test_mode_usart6(void)          /* breaks a fixed USART1 */
+static void test_mode_usart6(void)
 {
     setup();
 
@@ -216,6 +216,33 @@ static void test_parity_keeps_others(void)
     TEST_ASSERT_EQ(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_M  | USART_CR1_PCE, USART1->CR1);
 }
 
+/* ==================================================================== */
+/*  Stop Bits                                                           */
+/* ==================================================================== */
+
+static void test_stop_bits_2(void)
+{
+    setup();
+
+    uart_set_stop_bits(USART1, UART_STOP_BITS_2);
+
+    TEST_ASSERT_EQ(USART_CR2_STOP_1, USART1->CR2);
+}
+
+static void test_stop_bits_back_to_1(void)
+{
+    setup();
+
+    uart_set_stop_bits(USART1, UART_STOP_BITS_2);
+    uart_set_stop_bits(USART1, UART_STOP_BITS_1);
+
+    TEST_ASSERT_EQ(0U, USART1->CR2);
+}
+
+/* ==================================================================== */
+/*  Init/Deinit                                                         */
+/* ==================================================================== */
+
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -254,11 +281,11 @@ void test_uart_suite(void)
     RUN_TEST(test_parity_keeps_others);
 
     /* Stop bits */
-    //RUN_TEST(test_stop_bits_2);
-    //RUN_TEST(test_stop_bits_back_to_1);
+    RUN_TEST(test_stop_bits_2);
+    RUN_TEST(test_stop_bits_back_to_1);
 
-    /* Init / deinit */
-    //RUN_TEST(test_init_default);
-    //RUN_TEST(test_init_all_fields);
-    //RUN_TEST(test_deinit);
+    /* Init/deinit */
+    RUN_TEST(test_init_default);
+    RUN_TEST(test_init_all_fields);
+    RUN_TEST(test_deinit);
 }
