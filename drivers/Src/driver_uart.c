@@ -29,7 +29,8 @@ void uart_init(const uart_config_t *config)
 
 void uart_deinit(USART_TypeDef *instance)
 {
-
+    instance->CR1 = 0;
+    uart_clock_disable(instance);
 }
 
 /*
@@ -71,7 +72,12 @@ void uart_set_parity(USART_TypeDef *instance, uart_parity_e parity)
 
 void uart_set_stop_bits(USART_TypeDef *instance, uart_stop_bits_e stop_bits)
 {
+    instance->CR2 &= ~USART_CR2_STOP;
 
+    if(stop_bits == UART_STOP_BITS_2)
+    {
+        instance->CR2 |= USART_CR2_STOP_1; 
+    }
 }
 
 void uart_set_baudrate(USART_TypeDef *instance, uint32_t clock_hz, uint32_t baudrate)
