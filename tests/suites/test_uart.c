@@ -243,6 +243,48 @@ static void test_stop_bits_back_to_1(void)
 /*  Init/Deinit                                                         */
 /* ==================================================================== */
 
+static void test_init_default(void)
+{
+    setup();
+    RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
+    uart_config_t config = { .instance = USART1, .clock_hz = PCLK_HZ, .baudrate = 115200 };
+
+    uart_init(&config);
+
+    TEST_ASSERT_EQ(RCC_APB2ENR_USART1EN, RCC->APB2ENR & RCC_APB2ENR_USART1EN);
+    TEST_ASSERT_EQ(139U, USART1->BRR);
+    TEST_ASSERT_EQ(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE, USART1->CR1);
+    TEST_ASSERT_EQ(0U, USART1->CR2);
+}
+
+static void test_init_all_fields(void)
+{
+    setup();
+    uart_config_t config = {
+        .instance = USART6, .clock_hz = PCLK_HZ, .baudrate = 9600,
+        .mode = UART_MODE_TX, .parity = UART_PARITY_ODD, .stop_bits = UART_STOP_BITS_2,
+    };
+
+    uart_init(&config);
+
+    TEST_ASSERT_EQ(1667U, USART6->BRR);
+    TEST_ASSERT_EQ(USART_CR1_UE | USART_CR1_TE | USART_CR1_M  | USART_CR1_PCE | USART_CR1_PS, USART6->CR1);
+    TEST_ASSERT_EQ(USART_CR2_STOP_1, USART6->CR2);
+}
+
+static void test_deinit(void)
+{
+    setup();
+    uart_config_t config = { .instance = USART1, .clock_hz = PCLK_HZ, .baudrate = 115200 };
+    uart_init(&config);
+
+    uart_deinit(USART1);
+
+    TEST_ASSERT_EQ(0U, RCC->APB2ENR & RCC_APB2ENR_USART1EN);
+
+    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+    TEST_ASSERT_EQ(0U, USART1->CR1);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
