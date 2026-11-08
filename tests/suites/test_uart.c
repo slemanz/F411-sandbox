@@ -165,6 +165,59 @@ static void test_mode_usart6(void)          /* breaks a fixed USART1 */
 }
 
 /* ==================================================================== */
+/* Parity                                                               */
+/* ==================================================================== */
+
+static void test_parity_even(void)
+{
+    setup();
+
+    uart_set_parity(USART1, UART_PARITY_EVEN);
+
+    TEST_ASSERT_EQ(USART_CR1_M | USART_CR1_PCE, USART1->CR1);
+}
+
+static void test_parity_odd(void)
+{
+    setup();
+
+    uart_set_parity(USART1, UART_PARITY_ODD);
+
+    TEST_ASSERT_EQ(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS, USART1->CR1);
+}
+
+static void test_parity_odd_to_even(void)
+{
+    setup();
+
+    uart_set_parity(USART1, UART_PARITY_ODD);
+    uart_set_parity(USART1, UART_PARITY_EVEN);
+
+    TEST_ASSERT_EQ(USART_CR1_M | USART_CR1_PCE, USART1->CR1);
+}
+
+static void test_parity_none_clears(void)
+{
+    setup();
+
+    uart_set_parity(USART1, UART_PARITY_ODD);
+    uart_set_parity(USART1, UART_PARITY_NONE);
+
+    TEST_ASSERT_EQ(0U, USART1->CR1);
+}
+
+static void test_parity_keeps_others(void)
+{
+    setup();
+    USART1->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+
+    uart_set_parity(USART1, UART_PARITY_EVEN);
+
+    TEST_ASSERT_EQ(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_M  | USART_CR1_PCE, USART1->CR1);
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -192,4 +245,20 @@ void test_uart_suite(void)
     RUN_TEST(test_mode_rx);
     RUN_TEST(test_mode_overwrites);
     RUN_TEST(test_mode_usart6);
+
+    /* Parity */
+    RUN_TEST(test_parity_even);
+    RUN_TEST(test_parity_odd);
+    RUN_TEST(test_parity_odd_to_even);
+    RUN_TEST(test_parity_none_clears);
+    RUN_TEST(test_parity_keeps_others);
+
+    /* Stop bits */
+    //RUN_TEST(test_stop_bits_2);
+    //RUN_TEST(test_stop_bits_back_to_1);
+
+    /* Init / deinit */
+    //RUN_TEST(test_init_default);
+    //RUN_TEST(test_init_all_fields);
+    //RUN_TEST(test_deinit);
 }
