@@ -38,7 +38,13 @@ void uart_deinit(USART_TypeDef *instance)
 
 void uart_set_enabled(USART_TypeDef *instance, bool enabled)
 {
-
+    if(enabled)
+    {
+        instance->CR1 |= USART_CR1_UE;
+    }else
+    {
+        instance->CR1 &= ~USART_CR1_UE;
+    }
 }
 
 void uart_set_mode(USART_TypeDef *instance, uart_mode_e mode)
