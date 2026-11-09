@@ -9,7 +9,7 @@
 /*  Helpers                                                             */
 /* ==================================================================== */
 
-static bool read_byte_wait(uint8_t *byte)
+static bool uart_read_byte_wait(uint8_t *byte)
 {
     for(uint32_t i = 0; i < UART_RX_TRIES; i++)
     {
@@ -326,7 +326,7 @@ static void test_deinit(void)
 
 static void test_read_empty(void)
 {
-    loopback_setup();
+    uart_loopback_setup();
     uint8_t byte = 0x55;
 
     TEST_ASSERT_EQ(false, uart_read_byte(USART1, &byte));
@@ -335,18 +335,18 @@ static void test_read_empty(void)
 
 static void test_loopback_byte(void)
 {
-    loopback_setup();
+    uart_loopback_setup();
     uint8_t byte = 0;
 
     uart_write_byte(USART1, 0xA5);
 
-    TEST_ASSERT_EQ(true, read_byte_wait(&byte));
+    TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
     TEST_ASSERT_EQ(0xA5U, byte);
 }
 
 static void test_loopback_write(void)
 {
-    loopback_setup();
+    uart_loopback_setup();
     const uint8_t data[] = { 0x01, 0x80, 0xFF };
     uint8_t byte = 0;
 
@@ -354,11 +354,52 @@ static void test_loopback_write(void)
 
     for(uint32_t i = 0; i < 3; i++)
     {
-        TEST_ASSERT_EQ(true, read_byte_wait(&byte));
+        TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
         TEST_ASSERT_EQ(data[i], byte);
     }
 }
 
+static void test_loopback_write_string(void)
+{
+    uart_loopback_setup();
+    uint8_t byte = 0;
+
+    uart_write_string(USART1, "Hi!");
+
+    TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
+    TEST_ASSERT_EQ('H', byte);
+    TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
+    TEST_ASSERT_EQ('i', byte);
+    TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
+    TEST_ASSERT_EQ('!', byte);
+    TEST_ASSERT_EQ(false, uart_read_byte_wait(&byte)); 
+}
+
+static void test_flush_waits_tc(void)
+{
+    uart_loopback_setup();
+
+    uart_write_byte(USART1, 0xA5);
+    uart_flush(USART1);
+
+    TEST_ASSERT_EQ(USART_SR_TC, USART1->SR & USART_SR_TC);
+}
+
+static void test_read_clears_overrun(void)
+{
+    uart_loopback_setup();
+    uint8_t byte = 0;
+
+    uart_write_byte(USART1, 0x11);
+    uart_write_byte(USART1, 0x22);
+    uart_flush(USART1);
+
+    TEST_ASSERT_EQ(USART_SR_ORE, USART1->SR & USART_SR_ORE);
+
+    TEST_ASSERT_EQ(true, uart_read_byte(USART1, &byte));
+    TEST_ASSERT_EQ(0x11U, byte);
+    TEST_ASSERT_EQ(0U, USART1->SR & USART_SR_ORE);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
