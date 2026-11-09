@@ -1,17 +1,53 @@
 #include "ttest.h"
 #include "driver_uart.h"
+#include "driver_gpio.h"
 
 #define PCLK_HZ     16000000U
+#define UART_RX_TRIES    100000U
+
+/* ==================================================================== */
+/*  Helpers                                                             */
+/* ==================================================================== */
+
+static bool read_byte_wait(uint8_t *byte)
+{
+    for(uint32_t i = 0; i < UART_RX_TRIES; i++)
+    {
+        if(uart_read_byte(USART1, byte)) return true;
+    }
+
+    return false;
+}
 
 /* ==================================================================== */
 /*  Setup                                                               */
 /* ==================================================================== */
 
+/* Loopback: jumper PA9 (TX) -> PA10 (RX) */
+static const gpio_config_t uart_pins[] = {
+    { .pin = { GPIOA, GPIO_PIN_9  }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7 },
+    { .pin = { GPIOA, GPIO_PIN_10 }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7,
+    .pull = GPIO_PULL_UP },       /* idle high if the jumper is missing */
+};
+
+static const uart_config_t uart = {
+    .instance = USART1,
+    .clock_hz = PCLK_HZ,
+    .baudrate = 115200,
+};
+
 static void setup(void)
 {
-    RCC->APB2ENR  |=  RCC_APB2ENR_USART1EN;
-    RCC->APB2RSTR |=  RCC_APB2RSTR_USART1RST;
-    RCC->APB2RSTR &= ~RCC_APB2RSTR_USART1RST;
+    RCC->APB2ENR  |=  (RCC_APB2ENR_USART1EN | RCC_APB2ENR_USART6EN);
+    RCC->APB2RSTR |=  (RCC_APB2RSTR_USART1RST | RCC_APB2RSTR_USART6RST);
+    RCC->APB2RSTR &= ~(RCC_APB2RSTR_USART1RST | RCC_APB2RSTR_USART6RST);
+}
+
+static void uart_loopback_setup(void)
+{
+    setup();
+    gpio_init_table(uart_pins, 2);
+    uart_init(&uart);
 }
 
 static void test_setup_leaves_reset_values(void)
