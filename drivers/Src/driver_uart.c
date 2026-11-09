@@ -24,7 +24,18 @@ void uart_clock_disable(USART_TypeDef *instance)
 
 void uart_init(const uart_config_t *config)
 {
+    USART_TypeDef *instance = config->instance;
 
+    uart_clock_enable(instance);
+
+    uart_set_enabled(instance, false);
+
+    uart_set_mode(instance, config->mode);
+    uart_set_parity(instance, config->parity);
+    uart_set_stop_bits(instance, config->stop_bits);
+    uart_set_baudrate(instance, config->clock_hz, config->baudrate);
+
+    uart_set_enabled(instance, true);
 }
 
 void uart_deinit(USART_TypeDef *instance)
