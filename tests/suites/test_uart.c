@@ -2,8 +2,8 @@
 #include "driver_uart.h"
 #include "driver_gpio.h"
 
-#define PCLK_HZ     16000000U
-#define UART_RX_TRIES    100000U
+#define PCLK_HZ             16000000U
+#define UART_RX_TRIES       100000U
 
 /* ==================================================================== */
 /*  Helpers                                                             */
@@ -26,8 +26,7 @@ static bool read_byte_wait(uint8_t *byte)
 /* Loopback: jumper PA9 (TX) -> PA10 (RX) */
 static const gpio_config_t uart_pins[] = {
     { .pin = { GPIOA, GPIO_PIN_9  }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7 },
-    { .pin = { GPIOA, GPIO_PIN_10 }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7,
-    .pull = GPIO_PULL_UP },       /* idle high if the jumper is missing */
+    { .pin = { GPIOA, GPIO_PIN_10 }, .mode = GPIO_MODE_ALTFN, .af = GPIO_AF7, .pull = GPIO_PULL_UP },       
 };
 
 static const uart_config_t uart = {
@@ -58,7 +57,6 @@ static void test_setup_leaves_reset_values(void)
     TEST_ASSERT_EQ(0U, USART1->CR2);
     TEST_ASSERT_EQ(0U, USART1->BRR);
 }
-
 
 /* ==================================================================== */
 /*  Clock                                                               */
@@ -323,6 +321,46 @@ static void test_deinit(void)
 }
 
 /* ==================================================================== */
+/*  Write/Read (loopback)                                               */
+/* ==================================================================== */
+
+static void test_read_empty(void)
+{
+    loopback_setup();
+    uint8_t byte = 0x55;
+
+    TEST_ASSERT_EQ(false, uart_read_byte(USART1, &byte));
+    TEST_ASSERT_EQ(0x55U, byte);
+}
+
+static void test_loopback_byte(void)
+{
+    loopback_setup();
+    uint8_t byte = 0;
+
+    uart_write_byte(USART1, 0xA5);
+
+    TEST_ASSERT_EQ(true, read_byte_wait(&byte));
+    TEST_ASSERT_EQ(0xA5U, byte);
+}
+
+static void test_loopback_write(void)
+{
+    loopback_setup();
+    const uint8_t data[] = { 0x01, 0x80, 0xFF };
+    uint8_t byte = 0;
+
+    uart_write(USART1, data, 3);
+
+    for(uint32_t i = 0; i < 3; i++)
+    {
+        TEST_ASSERT_EQ(true, read_byte_wait(&byte));
+        TEST_ASSERT_EQ(data[i], byte);
+    }
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -366,4 +404,12 @@ void test_uart_suite(void)
     RUN_TEST(test_init_default);
     RUN_TEST(test_init_all_fields);
     RUN_TEST(test_deinit);
+
+    /* Write/Read (loopback) */
+    RUN_TEST(test_read_empty);
+    RUN_TEST(test_loopback_byte);
+    RUN_TEST(test_loopback_write);
+    RUN_TEST(test_loopback_write_string);
+    RUN_TEST(test_flush_waits_tc);
+    RUN_TEST(test_read_clears_overrun);
 }
