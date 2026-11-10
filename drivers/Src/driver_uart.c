@@ -119,12 +119,19 @@ void uart_write(USART_TypeDef *instance, const uint8_t *data, uint32_t len)
 
 void uart_write_string(USART_TypeDef *instance, const char *str)
 {
-
+    while(*str != '\0')
+    {
+        uart_write_byte(instance, (uint8_t)*str);
+        str++;
+    }
 }
 
 void uart_flush(USART_TypeDef *instance)
 {
-
+    while(!(instance->SR & USART_SR_TC))
+    {
+        /* wait transmission complete */
+    }
 }
 
 /*
