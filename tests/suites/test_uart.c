@@ -432,14 +432,14 @@ static void test_write_byte_timeout_expires(void)
 {
     uart_no_tx_setup();
 
-    TEST_ASSERT_EQ(true, uart_write_byte_timeout(USART1, 0x11, 5));   /* DR was empty */
+    TEST_ASSERT_EQ(true, uart_write_byte_timeout(USART1, 0x11, 5));
 
     uint32_t start = systick_get_ms();
-    TEST_ASSERT_EQ(false, uart_write_byte_timeout(USART1, 0x22, 5));  /* DR still full */
-    TEST_ASSERT_TRUE(systick_get_ms() - start >= 5U);                 /* really waited */
+    TEST_ASSERT_EQ(false, uart_write_byte_timeout(USART1, 0x22, 5));
+    TEST_ASSERT_TRUE(systick_get_ms() - start >= 5U);
 }
 
-static void test_write_byte_timeout_zero_ready(void)    /* flag checked before the clock */
+static void test_write_byte_timeout_zero_ready(void)
 {
     uart_no_tx_setup();
 
@@ -470,19 +470,41 @@ static void test_write_timeout_expires(void)
     TEST_ASSERT_EQ(false, uart_write_timeout(USART1, data, 3, 5));
 }
 
-static void test_write_timeout_is_total(void)   /* breaks a per-byte timeout */
+static void test_write_timeout_is_total(void)
 {
     setup();
     systick_init(PCLK_HZ);
     uart_config_t config = uart;
-    config.baudrate = 9600;                     /* ~1 ms per byte */
+    config.baudrate = 9600;
     config.mode     = UART_MODE_TX;
     uart_init(&config);
     const uint8_t data[10] = { 0 };
 
-    TEST_ASSERT_EQ(false, uart_write_timeout(USART1, data, 10, 5));    /* needs ~10 ms */
+    TEST_ASSERT_EQ(false, uart_write_timeout(USART1, data, 10, 5));
 }
 
+/* ==================================================================== */
+/*  Flush with timeout                                                  */
+/* ==================================================================== */
+
+static void test_flush_timeout_ok(void)
+{
+    uart_loopback_setup();
+    systick_init(PCLK_HZ);
+
+    uart_write_byte(USART1, 0xA5);
+
+    TEST_ASSERT_EQ(true, uart_flush_timeout(USART1, 5));
+}
+
+static void test_flush_timeout_expires(void)
+{
+    uart_no_tx_setup();
+
+    uart_write_byte(USART1, 0x11);
+
+    TEST_ASSERT_EQ(false, uart_flush_timeout(USART1, 5));
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
@@ -546,8 +568,8 @@ void test_uart_suite(void)
     RUN_TEST(test_write_timeout_is_total);
 
     /* Flush with timeout */
-    //RUN_TEST(test_flush_timeout_ok);
-    //RUN_TEST(test_flush_timeout_expires);
+    RUN_TEST(test_flush_timeout_ok);
+    RUN_TEST(test_flush_timeout_expires);
 
     systick_deinit();
 }
