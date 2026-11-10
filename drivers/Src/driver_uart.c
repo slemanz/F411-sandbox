@@ -152,5 +152,11 @@ bool uart_flush_timeout(USART_TypeDef *instance, uint32_t timeout_ms)
 
 bool uart_read_byte(USART_TypeDef *instance, uint8_t *byte)
 {
-    return false;
+    if(!(instance->SR & USART_SR_RXNE))
+    {
+        return false;
+    }
+
+    *byte = (uint8_t)instance->DR;
+    return true;
 }
