@@ -102,12 +102,19 @@ void uart_set_baudrate(USART_TypeDef *instance, uint32_t clock_hz, uint32_t baud
 
 void uart_write_byte(USART_TypeDef *instance, uint8_t byte)
 {
-
+    while(!(instance->SR & USART_SR_TXE))
+    {
+        /* wait transmit register empty */
+    }
+    instance->DR = byte;
 }
 
 void uart_write(USART_TypeDef *instance, const uint8_t *data, uint32_t len)
 {
-
+    for(uint32_t i = 0; i < len; i++)
+    {
+        uart_write_byte(instance, data[i]);
+    }
 }
 
 void uart_write_string(USART_TypeDef *instance, const char *str)
