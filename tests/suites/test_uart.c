@@ -1,6 +1,7 @@
 #include "ttest.h"
 #include "driver_uart.h"
 #include "driver_gpio.h"
+#include "driver_systick.h"
 
 #define PCLK_HZ             16000000U
 #define UART_RX_TRIES       100000U
@@ -47,6 +48,16 @@ static void uart_loopback_setup(void)
     setup();
     gpio_init_table(uart_pins, 2);
     uart_init(&uart);
+}
+
+static void uart_no_tx_setup(void)
+{
+    setup();
+    systick_init(PCLK_HZ);
+
+    uart_config_t config = uart;
+    config.mode = UART_MODE_RX;
+    uart_init(&config);
 }
 
 static void test_setup_leaves_reset_values(void)
@@ -402,6 +413,78 @@ static void test_read_clears_overrun(void)
 }
 
 /* ==================================================================== */
+/*  Write with timeout                                                  */
+/* ==================================================================== */
+
+static void test_write_byte_timeout_ok(void)
+{
+    uart_loopback_setup();
+    systick_init(PCLK_HZ);
+    uint8_t byte = 0;
+
+    TEST_ASSERT_EQ(true, uart_write_byte_timeout(USART1, 0xA5, 5));
+
+    TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
+    TEST_ASSERT_EQ(0xA5U, byte);
+}
+
+static void test_write_byte_timeout_expires(void)
+{
+    uart_no_tx_setup();
+
+    TEST_ASSERT_EQ(true, uart_write_byte_timeout(USART1, 0x11, 5));   /* DR was empty */
+
+    uint32_t start = systick_get_ms();
+    TEST_ASSERT_EQ(false, uart_write_byte_timeout(USART1, 0x22, 5));  /* DR still full */
+    TEST_ASSERT_TRUE(systick_get_ms() - start >= 5U);                 /* really waited */
+}
+
+static void test_write_byte_timeout_zero_ready(void)    /* flag checked before the clock */
+{
+    uart_no_tx_setup();
+
+    TEST_ASSERT_EQ(true, uart_write_byte_timeout(USART1, 0x11, 0));
+}
+
+static void test_write_timeout_ok(void)
+{
+    uart_loopback_setup();
+    systick_init(PCLK_HZ);
+    const uint8_t data[] = { 0x01, 0x80, 0xFF };
+    uint8_t byte = 0;
+
+    TEST_ASSERT_EQ(true, uart_write_timeout(USART1, data, 3, 5));
+
+    for(uint32_t i = 0; i < 3; i++)
+    {
+        TEST_ASSERT_EQ(true, uart_read_byte_wait(&byte));
+        TEST_ASSERT_EQ(data[i], byte);
+    }
+}
+
+static void test_write_timeout_expires(void)
+{
+    uart_no_tx_setup();
+    const uint8_t data[] = { 0x01, 0x80, 0xFF };
+
+    TEST_ASSERT_EQ(false, uart_write_timeout(USART1, data, 3, 5));
+}
+
+static void test_write_timeout_is_total(void)   /* breaks a per-byte timeout */
+{
+    setup();
+    systick_init(PCLK_HZ);
+    uart_config_t config = uart;
+    config.baudrate = 9600;                     /* ~1 ms per byte */
+    config.mode     = UART_MODE_TX;
+    uart_init(&config);
+    const uint8_t data[10] = { 0 };
+
+    TEST_ASSERT_EQ(false, uart_write_timeout(USART1, data, 10, 5));    /* needs ~10 ms */
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
@@ -453,4 +536,18 @@ void test_uart_suite(void)
     RUN_TEST(test_loopback_write_string);
     RUN_TEST(test_flush_waits_tc);
     RUN_TEST(test_read_clears_overrun);
+
+    /* Write with timeout */
+    RUN_TEST(test_write_byte_timeout_ok);
+    RUN_TEST(test_write_byte_timeout_expires);
+    RUN_TEST(test_write_byte_timeout_zero_ready);
+    RUN_TEST(test_write_timeout_ok);
+    RUN_TEST(test_write_timeout_expires);
+    RUN_TEST(test_write_timeout_is_total);
+
+    /* Flush with timeout */
+    //RUN_TEST(test_flush_timeout_ok);
+    //RUN_TEST(test_flush_timeout_expires);
+
+    systick_deinit();
 }
