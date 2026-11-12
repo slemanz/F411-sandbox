@@ -1,4 +1,19 @@
 #include "driver_uart.h"
+#include "driver_systick.h"
+
+/*
+ *  Private Helpers
+ */
+
+static bool uart_wait_flag(USART_TypeDef *instance, uint32_t flag, const systick_timeout_t *timeout)
+{
+    while(!(instance->SR & flag))
+    {
+        if(systick_timeout_expired(timeout)) return false;
+    }
+
+    return true;
+}
 
 /*
 * Clock control
