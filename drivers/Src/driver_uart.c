@@ -150,22 +150,41 @@ void uart_flush(USART_TypeDef *instance)
 }
 
 /*
-* Write with timeout
-*/
+ * Write with timeout
+ */
 
 bool uart_write_byte_timeout(USART_TypeDef *instance, uint8_t byte, uint32_t timeout_ms)
 {
-    return false;
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, timeout_ms);
+
+    if(!uart_wait_flag(instance, USART_SR_TXE, &timeout)) return false;
+
+    instance->DR = byte;
+    return true;
 }
 
 bool uart_write_timeout(USART_TypeDef *instance, const uint8_t *data, uint32_t len, uint32_t timeout_ms)
 {
-    return false;
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, timeout_ms);
+
+    for(uint32_t i = 0; i < len; i++)
+    {
+        if(!uart_wait_flag(instance, USART_SR_TXE, &timeout)) return false;
+
+        instance->DR = data[i];
+    }
+
+    return true;
 }
 
 bool uart_flush_timeout(USART_TypeDef *instance, uint32_t timeout_ms)
 {
-    return false;
+    systick_timeout_t timeout;
+    systick_timeout_start(&timeout, timeout_ms);
+
+    return uart_wait_flag(instance, USART_SR_TC, &timeout);
 }
 
 /*
