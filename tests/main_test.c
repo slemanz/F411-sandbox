@@ -4,6 +4,7 @@
 void test_gpio_suite(void);
 void test_systick_suite(void);
 void test_uart_suite(void);
+void test_nvic_suite(void);
 
 int main(void)
 {
@@ -13,6 +14,7 @@ int main(void)
     test_gpio_suite();
     test_systick_suite();
     test_uart_suite();
+    test_nvic_suite();
 
     ttest_end();
 }
