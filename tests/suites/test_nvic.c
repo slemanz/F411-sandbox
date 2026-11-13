@@ -82,12 +82,45 @@ static void test_enable_usart6(void)
 static void test_disable_keeps_others(void)
 {
     setup();
-    NVIC->ISER[1] = (1U << 5) | (1U << 6);  /* USART1 and USART2 */
+    NVIC->ISER[1] = (1U << 5) | (1U << 6); 
 
     nvic_disable(USART1_IRQn);
 
     TEST_ASSERT_EQ(1U << 6, NVIC->ISER[1]);
 }
+
+/* ==================================================================== */
+/*  Behavior                                                            */
+/* ==================================================================== */
+
+static void test_enable_runs_pending_irq(void)
+{
+    setup();
+    NVIC->ISPR[0] = 1U << 6;
+
+    nvic_enable(EXTI0_IRQn);
+    __DSB();
+    __ISB();
+
+    TEST_ASSERT_EQ(1U, s_exti0_calls);
+}
+
+static void test_disabled_irq_stays_pending(void)
+{
+    setup();
+    nvic_enable(EXTI0_IRQn);
+    nvic_disable(EXTI0_IRQn);
+
+    NVIC->ISPR[0] = 1U << 6;
+    __DSB();
+    __ISB();
+
+    TEST_ASSERT_EQ(0U, s_exti0_calls);
+    TEST_ASSERT_EQ(1U << 6, NVIC->ISPR[0] & (1U << 6));
+
+    NVIC->ICPR[0] = 1U << 6;
+}
+
 
 
 /* ==================================================================== */
