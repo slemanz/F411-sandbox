@@ -121,7 +121,26 @@ static void test_disabled_irq_stays_pending(void)
     NVIC->ICPR[0] = 1U << 6;
 }
 
+/* ==================================================================== */
+/*  Priority                                                            */
+/* ==================================================================== */
 
+static void test_priority_usart1(void)
+{
+    setup();
+
+    nvic_set_priority(USART1_IRQn, 3);
+
+    TEST_ASSERT_EQ(0x30U, NVIC->IPR[USART1_IRQn]);
+}
+
+static void test_priority_usart6(void)
+{
+    setup();
+
+    nvic_set_priority(USART6_IRQn, 15);
+    TEST_ASSERT_EQ(0x30U, NVIC->IPR[USART1_IRQn]);
+}
 
 /* ==================================================================== */
 /*  Test Suite                                                          */
