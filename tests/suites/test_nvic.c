@@ -48,6 +48,49 @@ static void test_setup_leaves_all_disabled(void)
 }
 
 /* ==================================================================== */
+/*  Enable / Disable                                                    */
+/* ==================================================================== */
+
+static void test_enable_low_irq(void)
+{
+    setup();
+
+    nvic_enable(EXTI0_IRQn);
+
+    TEST_ASSERT_EQ(1U << 6, NVIC->ISER[0]);
+}
+
+static void test_enable_usart1(void)
+{
+    setup();
+
+    nvic_enable(USART1_IRQn);
+
+    TEST_ASSERT_EQ(0U, NVIC->ISER[0]);
+    TEST_ASSERT_EQ(1U << 5, NVIC->ISER[1]);
+}
+
+static void test_enable_usart6(void)
+{
+    setup();
+
+    nvic_enable(USART6_IRQn);
+
+    TEST_ASSERT_EQ(1U << 7, NVIC->ISER[2]);
+}
+
+static void test_disable_keeps_others(void)
+{
+    setup();
+    NVIC->ISER[1] = (1U << 5) | (1U << 6);  /* USART1 and USART2 */
+
+    nvic_disable(USART1_IRQn);
+
+    TEST_ASSERT_EQ(1U << 6, NVIC->ISER[1]);
+}
+
+
+/* ==================================================================== */
 /*  Test Suite                                                          */
 /* ==================================================================== */
 
