@@ -6,12 +6,18 @@
 
 void nvic_enable(IRQn_Type irq)
 {
+    uint32_t n = (uint32_t)irq;
 
+    NVIC->ISER[n / 32U] = 1U << (n % 32U);
 }
 
 void nvic_disable(IRQn_Type irq)
 {
+    uint32_t n = (uint32_t)irq;
 
+    NVIC->ICER[n / 32U] = 1U << (n % 32U);
+    __DSB();
+    __ISB();
 }
 
 /*
