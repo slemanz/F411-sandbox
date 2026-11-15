@@ -139,7 +139,8 @@ static void test_priority_usart6(void)
     setup();
 
     nvic_set_priority(USART6_IRQn, 15);
-    TEST_ASSERT_EQ(0x30U, NVIC->IPR[USART1_IRQn]);
+    TEST_ASSERT_EQ(0xF0U, NVIC->IPR[USART6_IRQn]);
+    TEST_ASSERT_EQ(0U,    NVIC->IPR[USART1_IRQn]);
 }
 
 /* ==================================================================== */
