@@ -9,15 +9,17 @@ PROFILE  ?= debug
 TARGET    = tests
 DIR_BUILD = build/$(PROFILE)
 
+OPT = -O0 -g3
+
 ifeq ($(PROFILE), release)
-    OPT = -Os -g
+    DRIVER_OPT = -Os -g
 else
-    OPT = -O0 -g3
+    DRIVER_OPT = -O0 -g3
 endif
 
 MCU      = -mcpu=cortex-m4 -mthumb -mfloat-abi=soft
-CFLAGS   = $(MCU) $(OPT) -std=gnu11 -DSTM32F411xE -Wall -Wextra -Wno-unused-parameter -Werror \
-			-ffunction-sections -fdata-sections
+CFLAGS   = $(MCU) -std=gnu11 -DSTM32F411xE -Wall -Wextra -Wno-unused-parameter -Werror \
+                        -ffunction-sections -fdata-sections
 LDFLAGS  = $(MCU) -T../drivers/Device/linker/STM32F411.ld --specs=nano.specs --specs=nosys.specs -Wl,--gc-sections
 
 INCLUDES =	-I../drivers/Device/cmsis/Inc \
@@ -48,22 +50,22 @@ $(PREREQ):
 	mkdir -p $(PREREQ)
 
 $(DIR_BUILD)/%.o: %.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(*).c
+	$(CC) -c $(CFLAGS) $(OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o $(*).c
 
 $(DIR_BUILD)/%.o: framework/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o framework/$(*).c
+	$(CC) -c $(CFLAGS) $(OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o framework/$(*).c
 
 $(DIR_BUILD)/%.o: suites/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o suites/$(*).c
+	$(CC) -c $(CFLAGS) $(OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o suites/$(*).c
 
 $(DIR_BUILD)/%.o: ../drivers/Device/startup/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Device/startup/$(*).c
+	$(CC) -c $(CFLAGS) $(OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Device/startup/$(*).c
 
 $(DIR_BUILD)/%.o: ../drivers/Device/system/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Device/system/$(*).c
+	$(CC) -c $(CFLAGS) $(OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Device/system/$(*).c
 
 $(DIR_BUILD)/%.o: ../drivers/Src/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Src/$(*).c
+	$(CC) -c $(CFLAGS) $(DRIVER_OPT) $(INCLUDES) -o $(DIR_BUILD)/$(*).o ../drivers/Src/$(*).c
 
 $(DIR_BUILD)/$(TARGET).elf: $(OBJS) $(SUITES) $(DRIVERS)
 	$(CC) $(LDFLAGS) -o $@ $^
