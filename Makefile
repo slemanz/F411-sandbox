@@ -2,7 +2,7 @@ CC = arm-none-eabi-gcc
 LD = arm-none-eabi-gcc
 SIZE = arm-none-eabi-size
 OBJCOPY = arm-none-eabi-objcopy
-JLINK = jlink
+OPENOCD = openocd
 
 RM = rm -rf
 
@@ -57,7 +57,7 @@ $(DIR_BUILD)/$(TARGET).elf: $(OBJS) $(DRIVERS)
 	$(SIZE) $(DIR_BUILD)/$(TARGET).elf
 
 load:
-	$(JLINK) flash.jlink
+	$(OPENOCD) -f stm32f411-jlink.cfg -c "program $(DIR_BUILD)/$(TARGET).elf verify reset exit"
 
 clean:
 	$(RM) $(DIR_BUILD)
